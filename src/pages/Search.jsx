@@ -82,21 +82,21 @@ export default function Search() {
   }, [query, menuData, dayNameMap]);
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12 md:py-16 min-h-screen">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold tracking-tight mb-4">Search Menus</h1>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          Find your favorite dishes by searching for a date, day of the week, or dish name. 🥧🥩☁️
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-16 min-h-screen">
+      <div className="text-center mb-8 sm:mb-12">
+        <h1 className="text-2xl sm:text-4xl font-bold tracking-tight mb-3 sm:mb-4">Search Menus</h1>
+        <p className="text-muted-foreground text-sm sm:text-base max-w-sm sm:max-w-md mx-auto">
+          Find your favorite dishes by searching for a date, day of the week, or dish name. 
         </p>
       </div>
 
-      <div className="relative mb-12 group">
+      <div className="relative mb-8 sm:mb-12 group">
         <Input 
           icon={SearchIcon}
-          placeholder="Try '15', 'Monday', 'Paneer' or 'Dal'..."
+          placeholder="Try '15', 'Monday', 'Paneer'..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="py-10 text-lg rounded-[2.5rem] shadow-2xl transition-all focus:ring-accent/20 border-border group-hover:border-accent/30 group-focus-within:border-accent"
+          className="py-6 sm:py-9 text-base sm:text-lg rounded-[1.5rem] sm:rounded-[2.5rem] shadow-xl sm:shadow-2xl transition-all focus:ring-accent/20 border-border/40 group-hover:border-accent/30 group-focus-within:border-accent bg-background"
         />
         <AnimatePresence>
           {query && (
@@ -138,22 +138,22 @@ export default function Search() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="group"
               >
-                <Card className="overflow-hidden border-border/40 hover:border-accent/40 bg-card/10 hover:bg-card/30 transition-all duration-300">
-                  <CardHeader className="py-4 border-b border-border/40 flex flex-row items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent font-bold">
+                <Card className="overflow-hidden border-border/40 hover:border-accent/40 bg-card/20 hover:bg-card/40 transition-all duration-300 backdrop-blur-sm">
+                  <CardHeader className="py-3 sm:py-4 border-b border-border/40 flex flex-row items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-accent/10 flex items-center justify-center text-accent font-bold text-sm sm:text-base">
                         {result.date}
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg capitalize">{result.dayInfo.name}</h3>
-                        <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">{result.dayInfo.full}</p>
+                        <h3 className="font-bold text-sm sm:text-lg capitalize leading-tight">{result.dayInfo.name}</h3>
+                        <p className="text-[9px] sm:text-[10px] uppercase font-bold text-muted-foreground tracking-widest">{result.dayInfo.full}</p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 bg-accent/10 text-accent rounded-full border border-accent/20">
+                    <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest px-2 sm:px-3 py-1 bg-accent/10 text-accent rounded-full border border-accent/20 whitespace-nowrap">
                       {result.matchType} match
                     </span>
                   </CardHeader>
-                  <CardContent className="py-6">
+                  <CardContent className="p-4 sm:p-6 sm:py-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {result.matchedMealTypes.map((mealType) => {
                         const items = result.meals[mealType];
