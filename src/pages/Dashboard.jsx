@@ -135,7 +135,7 @@ export default function Dashboard() {
              // Fallback to text if file sharing is not supported
              await navigator.share({
                 title: `Messit - ${meal.label}`,
-                text: `Check out today's ${meal.label} menu with Messit! Developed By Mayank Jha\nMenu: ${items ? items.join(', ') : 'No menu found.'}`,
+                text: `Check out today's ${meal.label} menu with Messit! Developed By Mayank Jha\n\nMeal Items: ${items ? items.join(', ') : 'No menu found.'}`,
                 url: 'https://messit.nfks.co.in'
               });
           }
