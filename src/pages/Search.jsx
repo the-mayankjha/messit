@@ -10,6 +10,7 @@ import { CoffeeIcon } from '../components/ui/icons/CoffeeIcon';
 import { LunchIcon } from '../components/ui/icons/LunchIcon';
 import { SnacksIcon } from '../components/ui/icons/SnacksIcon';
 import { DinnerIcon } from '../components/ui/icons/DinnerIcon';
+import { CookingPotIcon } from '../components/ui/icons/CookingPotIcon';
 
 export default function Search() {
   const { menuData } = useStore();
@@ -121,12 +122,29 @@ export default function Search() {
               animate={{ opacity: 1 }}
               className="py-20 text-center opacity-30 select-none"
             >
-              <div className="flex justify-center gap-8 mb-6">
-                 <CalendarDaysIcon size={32} />
-                 <CoffeeIcon size={32} />
-                 <LunchIcon size={32} />
+              <div className="flex justify-center mb-10 overflow-hidden w-full max-w-[320px] mx-auto mask-fade-edges">
+                <motion.div 
+                  className="flex gap-12 whitespace-nowrap"
+                  animate={{ x: [0, -456] }}
+                  transition={{ 
+                    duration: 15, 
+                    repeat: Infinity, 
+                    ease: "linear" 
+                  }}
+                >
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex gap-12 shrink-0">
+                      <CalendarDaysIcon size={28} className="text-accent/60 shrink-0" />
+                      <CoffeeIcon size={28} className="text-accent/60 shrink-0" />
+                      <LunchIcon size={28} className="text-accent/60 shrink-0" />
+                      <SnacksIcon size={28} className="text-accent/60 shrink-0" />
+                      <DinnerIcon size={28} className="text-accent/60 shrink-0" />
+                      <CookingPotIcon size={28} className="text-accent/60 shrink-0" />
+                    </div>
+                  ))}
+                </motion.div>
               </div>
-              <p className="text-sm font-bold tracking-widest uppercase italic">Ready for Discovery</p>
+              <p className="text-[10px] sm:text-xs font-bold tracking-[0.5em] uppercase italic opacity-40">The Whole Day in One Scroll</p>
             </motion.div>
           ) : results.length > 0 ? (
             results.map((result) => (
