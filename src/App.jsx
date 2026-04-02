@@ -12,6 +12,7 @@ import { BellRingIcon } from './components/ui/icons/BellRingIcon';
 import { DashboardIcon } from './components/ui/icons/DashboardIcon';
 import { SearchIcon } from './components/ui/icons/SearchIcon';
 import { requestNotificationPermission, sendNotification } from './utils/notifier';
+import NotificationDrawer from './components/NotificationDrawer';
 
 export default function App() {
   const { 
@@ -106,9 +107,31 @@ export default function App() {
   // Handle Bell Animation Trigger
   useEffect(() => {
     if (isNotificationPending && bellRef.current) {
-      bellRef.current.startAnimation();
+      bellRef.current.shake();
     }
   }, [isNotificationPending]);
+
+  const { notifications, setDrawerOpen } = useStore();
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const BellWithBadge = ({ isMobile = false }) => (
+    <div className="relative">
+      <BellRingIcon 
+        ref={bellRef} 
+        className={`${isMobile ? '' : 'text-muted-foreground/60 hover:text-foreground'} transition-colors cursor-pointer p-2 hover:bg-muted/50 rounded-xl`}
+        size={22}
+        strokeWidth={1.8}
+        onClick={() => setDrawerOpen(true)}
+      />
+      {unreadCount > 0 && (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="absolute top-2 right-2 w-2.5 h-2.5 bg-accent rounded-full border-2 border-background shadow-sm pointer-events-none"
+        />
+      )}
+    </div>
+  );
 
   const navItems = [
     { id: 'dashboard', label: 'Menu', icon: UtensilsCrossed },
@@ -140,6 +163,9 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors duration-200">
       
+      {/* Notifications Hub */}
+      <NotificationDrawer />
+
       {/* Header Navigation */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
         <div className="flex items-center justify-between h-20 px-6 lg:px-12 max-w-7xl mx-auto">
@@ -195,25 +221,13 @@ export default function App() {
             <div className="h-8 w-px bg-border/60 mx-2 hidden sm:block" />
             
             <div className="flex items-center">
-              <BellRingIcon 
-                ref={bellRef} 
-                className="text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer p-2 hover:bg-muted/50 rounded-xl" 
-                size={22}
-                strokeWidth={1.8}
-                onClick={() => setNotificationPending(false)}
-              />
+              <BellWithBadge />
             </div>
           </nav>
 
           {/* Mobile Bell (visible only on mobile) */}
           <div className="sm:hidden flex items-center">
-            <BellRingIcon 
-              ref={bellRef} // Can share ref as only one is visible at a time
-              className="text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer p-2 hover:bg-muted/50 rounded-xl" 
-              size={22}
-              strokeWidth={1.8}
-              onClick={() => setNotificationPending(false)}
-            />
+            <BellWithBadge isMobile={true} />
           </div>
         </div>
       </header>

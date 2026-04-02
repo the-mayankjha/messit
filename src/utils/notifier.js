@@ -43,6 +43,7 @@ export const sendNotification = (mealName, mode) => {
       }
 
       // Trigger the Bell Animation via Store
+      useStore.getState().addNotification(title, body);
       useStore.setState({ isNotificationPending: true });
       return { success: true, title, body };
     } catch (e) {

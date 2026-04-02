@@ -12,6 +12,7 @@ const BellRingIcon = forwardRef(
       isControlled.current = true;
       return {
         startAnimation: () => (reduced ? controls.start("normal") : controls.start("animate")),
+        shake: () => (reduced ? controls.start("normal") : controls.start("shake")),
         stopAnimation: () => controls.start("normal"),
       };
     });
@@ -39,25 +40,43 @@ const BellRingIcon = forwardRef(
     const bellVariants = {
       normal: { rotate: 0 },
       animate: {
-        rotate: [0, -15, 13, -9, 6, -3, 0],
-        transition: { duration: 1.4 * duration, ease: "easeInOut", repeat: 0 },
+        rotate: [0, -8, 6, -4, 2, 0],
+        transition: { duration: 1.2 * duration, ease: "easeInOut", repeat: 0 },
       },
+      shake: {
+        rotate: [0, -12, 12, -12, 12, -8, 8, -4, 4, 0],
+        scale: [1, 1.1, 0.95, 1.05, 1],
+        transition: { 
+          duration: 0.8,
+          times: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1],
+          ease: "easeInOut"
+        }
+      }
     };
 
     const clapperVariants = {
       normal: { x: 0 },
       animate: {
-        x: [0, -3, 3, -2, 2, 0],
-        transition: { duration: 1.4 * duration, ease: "easeInOut", repeat: 0 },
+        x: [0, -1.5, 1.5, -1, 1, 0],
+        transition: { duration: 1.2 * duration, ease: "easeInOut", repeat: 0 },
       },
+      shake: {
+        x: [0, -3, 3, -3, 3, 0],
+        transition: { duration: 0.8, ease: "easeInOut" }
+      }
     };
 
     const waveVariants = {
       normal: { opacity: 0 },
       animate: {
-        opacity: [0, 1, 0.4, 1, 0],
-        transition: { duration: 1.4 * duration, repeat: 0, ease: "easeInOut" },
+        opacity: [0, 0.6, 0.2, 0.6, 0],
+        transition: { duration: 1.2 * duration, repeat: 0, ease: "easeInOut" },
       },
+      shake: {
+        opacity: [0, 1, 0, 1, 0],
+        scale: [1, 1.3, 1, 1.3, 1],
+        transition: { duration: 0.8 }
+      }
     };
 
     return (
