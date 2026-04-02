@@ -17,6 +17,10 @@ export default function Settings() {
     setIsOnboarded,
     setMenuData
   } = useStore();
+  const [testMeal, setTestMeal] = useState('Lunch');
+  const [lastTestResult, setLastTestResult] = useState(null);
+
+  const testMeals = ['Breakfast', 'Lunch', 'Snacks', 'Dinner'];
 
   const themes = [
     { id: 'light', icon: Sun, label: 'Light' },
@@ -35,11 +39,25 @@ export default function Settings() {
   const handleTestNotification = async () => {
     const granted = await requestNotificationPermission();
     if (granted) {
-      sendNotification("Lunch", notificationMode);
+      const result = sendNotification(testMeal, notificationMode);
+      setLastTestResult(result);
     } else {
       alert("Please enable notifications in your browser settings.");
     }
   };
+
+  const previewContent = useMemo(() => {
+    if (notificationMode === 'stud') {
+      return {
+        title: `Yo Bro, Fuel Up! 🥩`,
+        body: `Grab your protein! ${testMeal} is being served at the mess...`
+      };
+    }
+    return {
+      title: `Your Meal Awaits, Princess ✨`,
+      body: `It's time for a delicious ${testMeal}. Treat yourself well...`
+    };
+  }, [notificationMode, testMeal]);
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4 animate-in fade-in duration-500">
@@ -145,10 +163,39 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-border">
-              <Button onClick={handleTestNotification} variant="outline" className="group w-full sm:w-auto">
-                <BellRingIcon size={16} className="mr-2" />
-                Test Notification
+            <div className="pt-4 border-t border-border space-y-6">
+              <div className="flex flex-col gap-4">
+                <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Notification Tester</p>
+                
+                {/* Meal Selector */}
+                <div className="flex flex-wrap gap-2">
+                  {testMeals.map(m => (
+                    <button
+                      key={m}
+                      onClick={() => setTestMeal(m)}
+                      className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
+                        testMeal === m ? 'bg-accent text-accent-foreground shadow-sm' : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Preview Card */}
+                <div className="p-4 rounded-2xl bg-muted/30 border border-border/50 relative overflow-hidden group/preview">
+                  <div className="absolute top-0 right-0 p-3 opacity-10 group-hover/preview:opacity-20 transition-opacity">
+                    <BellRingIcon size={40} />
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent mb-2">Live Preview</p>
+                  <h4 className="font-bold text-sm mb-1">{previewContent.title}</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{previewContent.body}</p>
+                </div>
+              </div>
+
+              <Button onClick={handleTestNotification} size="lg" className="group w-full rounded-2xl py-7 text-base font-bold shadow-xl hover:shadow-accent/20 transition-all">
+                <BellRingIcon size={20} className="mr-3 group-hover:block hidden animate-bounce" />
+                Fire Test Notification
               </Button>
             </div>
 

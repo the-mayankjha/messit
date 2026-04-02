@@ -7,21 +7,21 @@ export const sendNotification = (mealName, mode) => {
   }
 
   if (Notification.permission === "granted") {
-    let title = "Messit - Meal Time!";
-    let body = `Time for ${mealName}. See you at the mess!`;
-    let icon = "/icon.png"; // PWA icon
-
     if (mode === 'stud') {
-      title = "Yo Bro, Fuel Up! 🥩";
+      title = `Yo Bro, Fuel Up! 🥩`;
       body = `Grab your protein! ${mealName} is being served at the mess. Let's get those gains.`;
     } else if (mode === 'princess') {
-      title = "Your Meal Awaits, Princess ✨";
+      title = `Your Meal Awaits, Princess ✨`;
       body = `It's time for a delicious ${mealName}. Treat yourself well today! 🌸`;
+    } else {
+       title = "Messit - Meal Time!";
+       body = `Time for ${mealName}. See you at the mess!`;
     }
 
     new Notification(title, { body, icon });
     // Trigger the Bell Animation via Store
     useStore.setState({ isNotificationPending: true });
+    return { title, body }; 
   } else if (Notification.permission !== "denied") {
     Notification.requestPermission().then((permission) => {
       if (permission === "granted") {

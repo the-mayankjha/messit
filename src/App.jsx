@@ -62,8 +62,10 @@ export default function App() {
 
   }, [theme, accentColor]);
 
-  // Handle Automatic Notifications
+  // Handle Automatic Notifications with de-duplication
   useEffect(() => {
+    const { lastNotifiedMeal, setLastNotifiedMeal } = useStore.getState();
+
     // Only check if they haven't explicitly denied
     if ("Notification" in window && Notification.permission !== "denied") {
       requestNotificationPermission();
@@ -71,35 +73,34 @@ export default function App() {
 
     const checkMealTimes = () => {
       const now = new Date();
+      const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
       const hours = now.getHours();
       const mins = now.getMinutes();
 
       // Only notify if we have a menu uploaded
       if (!menuData) return;
 
-      // Breakfast: 7:15
-      if (hours === 7 && mins === 15) sendNotification('Breakfast', notificationMode);
-      // Lunch: 12:30
-      if (hours === 12 && mins === 30) sendNotification('Lunch', notificationMode);
-      // Snacks: 16:45
-      if (hours === 16 && mins === 45) sendNotification('Snacks', notificationMode);
-      // Dinner: 19:15
-      if (hours === 19 && mins === 15) sendNotification('Dinner', notificationMode);
+      const schedules = [
+        { name: 'Breakfast', h: 7, m: 15 },
+        { name: 'Lunch', h: 12, m: 30 },
+        { name: 'Snacks', h: 16, m: 45 },
+        { name: 'Dinner', h: 19, m: 15 }
+      ];
+
+      schedules.forEach(s => {
+        const mealID = `${dateStr}_${s.name.toLowerCase()}`;
+        if (hours === s.h && mins === s.m && lastNotifiedMeal !== mealID) {
+          sendNotification(s.name, notificationMode);
+          setLastNotifiedMeal(mealID);
+        }
+      });
     };
 
-    // Align interval to the start of the next minute
-    const msToNextMinute = 60000 - (new Date().getSeconds() * 1000 + new Date().getMilliseconds());
-    let interval;
-    
-    const timeout = setTimeout(() => {
-      checkMealTimes();
-      interval = setInterval(checkMealTimes, 60000);
-    }, msToNextMinute);
+    // Check once immediately then every minute
+    checkMealTimes();
+    const interval = setInterval(checkMealTimes, 60000);
 
-    return () => {
-      clearTimeout(timeout);
-      if (interval) clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [notificationMode, menuData]);
 
   // Handle Bell Animation Trigger
