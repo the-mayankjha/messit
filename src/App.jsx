@@ -1,0 +1,187 @@
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { useStore } from './store/useStore';
+import Dashboard from './pages/Dashboard';
+import UploadMenu from './pages/UploadMenu';
+import Settings from './pages/Settings';
+import { UtensilsCrossed } from 'lucide-react';
+import { SettingsIcon } from './components/ui/icons/SettingsIcon';
+import { BellRingIcon } from './components/ui/icons/BellRingIcon';
+import { DashboardIcon } from './components/ui/icons/DashboardIcon';
+import { requestNotificationPermission, sendNotification } from './utils/notifier';
+
+export default function App() {
+  const { theme, accentColor, menuData, notificationMode, isNotificationPending, setNotificationPending } = useStore();
+  
+  // 'dashboard' | 'upload' | 'settings'
+  const [currentPage, setCurrentPage] = useState(menuData ? 'dashboard' : 'upload');
+  const bellRef = useRef(null);
+  const settingsIconRef = useRef(null);
+  const uploadIconRef = useRef(null);
+
+  // Apply Theme and Accent
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.classList.add(systemTheme);
+    } else {
+      root.classList.add(theme);
+    }
+
+    // Apply accent classes by clearing old ones
+    root.classList.remove('theme-red', 'theme-blue', 'theme-green', 'theme-purple', 'theme-orange');
+    
+    if (accentColor !== 'default') {
+      root.classList.add(`theme-${accentColor}`);
+    }
+
+  }, [theme, accentColor]);
+
+  // Handle Automatic Notifications
+  useEffect(() => {
+    // Only check if they haven't explicitly denied
+    if ("Notification" in window && Notification.permission !== "denied") {
+      requestNotificationPermission();
+    }
+
+    const checkMealTimes = () => {
+      const now = new Date();
+      const hours = now.getHours();
+      const mins = now.getMinutes();
+
+      // Only notify if we have a menu uploaded
+      if (!menuData) return;
+
+      // Breakfast: 7:15
+      if (hours === 7 && mins === 15) sendNotification('Breakfast', notificationMode);
+      // Lunch: 12:30
+      if (hours === 12 && mins === 30) sendNotification('Lunch', notificationMode);
+      // Snacks: 16:45
+      if (hours === 16 && mins === 45) sendNotification('Snacks', notificationMode);
+      // Dinner: 19:15
+      if (hours === 19 && mins === 15) sendNotification('Dinner', notificationMode);
+    };
+
+    // Align interval to the start of the next minute
+    const msToNextMinute = 60000 - (new Date().getSeconds() * 1000 + new Date().getMilliseconds());
+    let interval;
+    
+    const timeout = setTimeout(() => {
+      checkMealTimes();
+      interval = setInterval(checkMealTimes, 60000);
+    }, msToNextMinute);
+
+    return () => {
+      clearTimeout(timeout);
+      if (interval) clearInterval(interval);
+    };
+  }, [notificationMode, menuData]);
+
+  // Handle Bell Animation Trigger
+  useEffect(() => {
+    if (isNotificationPending && bellRef.current) {
+      bellRef.current.startAnimation();
+    }
+  }, [isNotificationPending]);
+
+  const navItems = [
+    { id: 'dashboard', label: 'Menu', icon: UtensilsCrossed },
+    { id: 'upload', label: 'Upload', icon: DashboardIcon },
+    { id: 'settings', label: 'Settings', icon: SettingsIcon }
+  ];
+
+  const handleNavClick = (id) => {
+    setCurrentPage(id);
+    if (id === 'settings' && settingsIconRef.current) {
+      settingsIconRef.current.startAnimation();
+    }
+    if (id === 'upload' && uploadIconRef.current) {
+      uploadIconRef.current.startAnimation();
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors duration-200">
+      
+      {/* Header Navigation */}
+      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
+        <div className="flex items-center justify-between h-20 px-6 lg:px-12 max-w-7xl mx-auto">
+          <div className="flex items-center gap-3 font-bold text-xl cursor-pointer group" onClick={() => handleNavClick(menuData ? 'dashboard' : 'upload')}>
+            <img 
+              src="/icon.png" 
+              alt="Messit Logo" 
+              className="w-9 h-9 rounded-xl object-contain shadow-md group-hover:scale-105 transition-transform duration-200" 
+            />
+            <span className="tracking-tight">Messit</span>
+          </div>
+          
+          <nav className="flex items-center gap-2 sm:gap-6">
+            <div className="flex items-center bg-muted/50 rounded-2xl p-1.5 gap-1 shadow-inner">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentPage === item.id;
+                
+                if (item.id === 'dashboard' && !menuData) return null; // Hide dashboard if no data
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavClick(item.id)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 relative ${
+                      isActive 
+                        ? 'bg-background text-accent-foreground shadow-sm font-semibold' 
+                        : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                    }`}
+                  >
+                    {item.id === 'settings' ? (
+                      <SettingsIcon ref={settingsIconRef} size={19} strokeWidth={1.8} />
+                    ) : item.id === 'upload' ? (
+                      <DashboardIcon ref={uploadIconRef} size={19} strokeWidth={1.8} />
+                    ) : (
+                      <Icon className="w-4.5 h-4.5" size={19} strokeWidth={1.8} />
+                    )}
+                    <span className="hidden md:inline text-sm">{item.label}</span>
+                    {isActive && (
+                      <motion.div
+                        layoutId="active-pill"
+                        className="absolute inset-0 bg-background rounded-xl -z-10 shadow-sm"
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="h-8 w-px bg-border/60 mx-2 hidden sm:block" />
+            
+            <div className="flex items-center">
+              <BellRingIcon 
+                ref={bellRef} 
+                className="text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer p-2 hover:bg-muted/50 rounded-xl" 
+                size={22}
+                strokeWidth={1.8}
+                onClick={() => setNotificationPending(false)}
+              />
+            </div>
+          </nav>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="flex-1">
+        {currentPage === 'dashboard' ? (
+          <Dashboard />
+        ) : currentPage === 'upload' ? (
+          <UploadMenu onComplete={() => setCurrentPage('dashboard')} />
+        ) : currentPage === 'settings' ? (
+          <Settings />
+        ) : null}
+      </main>
+
+    </div>
+  );
+}

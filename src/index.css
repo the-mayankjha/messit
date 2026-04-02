@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #37352f;
+    --card: #ffffff;
+    --border: #e9e9e7;
+    
+    --muted: #f1f1ef;
+    --muted-foreground: #787774;
+
+    --secondary: #ebeced;
+    --secondary-foreground: #37352f;
+
+    /* Default Accent (Gray) */
+    --accent: #ebeced;
+    --accent-foreground: #37352f;
+  }
+
+  .dark {
+    --background: #191919;
+    --foreground: #d4d4d4;
+    --card: #202020;
+    --border: #333333;
+    
+    --muted: #2f2f2f;
+    --muted-foreground: #9b9b9b;
+
+    --secondary: #2b2b2b;
+    --secondary-foreground: #d4d4d4;
+
+    /* Default Accent (Gray) */
+    --accent: #2b2b2b;
+    --accent-foreground: #d4d4d4;
+  }
+
+  /* Themes - Light */
+  .theme-red { --accent: #ffe2dd; --accent-foreground: #db402c; }
+  .theme-blue { --accent: #e3e2fe; --accent-foreground: #2eaadc; }
+  .theme-green { --accent: #dbeddb; --accent-foreground: #0f7b6c; }
+  .theme-purple { --accent: #e8deee; --accent-foreground: #9065b0; }
+  .theme-orange { --accent: #fadec9; --accent-foreground: #d9730d; }
+
+  /* Themes - Dark */
+  .dark.theme-red { --accent: #432422; --accent-foreground: #e57a73; }
+  .dark.theme-blue { --accent: #193f54; --accent-foreground: #5eaddc; }
+  .dark.theme-green { --accent: #1d3a31; --accent-foreground: #4aa181; }
+  .dark.theme-purple { --accent: #372a44; --accent-foreground: #a67fcb; }
+  .dark.theme-orange { --accent: #4a2d19; --accent-foreground: #d98f53; }
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground font-sans antialiased selection:bg-accent selection:text-accent-foreground;
+  }
+}
