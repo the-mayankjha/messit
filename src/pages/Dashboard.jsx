@@ -161,7 +161,7 @@ export default function Dashboard() {
         )}
         <Card className="h-full flex flex-col group">
           <CardHeader className={`pb-3 border-b transition-colors ${meal.status === 'Ongoing' ? 'bg-accent/10 border-accent/20' : 'border-border/50 bg-muted/10 group-hover:bg-muted/20'}`}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className={`p-2.5 rounded-xl shadow-sm ${meal.status === 'Done' ? 'bg-muted text-muted-foreground' : 'bg-accent/30 text-accent-foreground'}`}>
                   <MealIcon className="w-5 h-5" />

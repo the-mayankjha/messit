@@ -10,12 +10,12 @@ import { Input } from '../components/ui/Input';
 import { useRef } from 'react';
 
 export default function Onboarding() {
-  const { setIsOnboarded, setUser } = useStore();
+  const { setIsOnboarded, setUser, setMenuData, menuData } = useStore();
   
   const googleRef = useRef(null);
   const githubRef = useRef(null);
   
-  // 'welcome' | 'auth'
+  // 'welcome' | 'auth' | 'upload'
   const [step, setStep] = useState('welcome');
   // 'login' | 'signup'
   const [authMode, setAuthMode] = useState('login');
@@ -24,15 +24,45 @@ export default function Onboarding() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
 
+  const [isParsing, setIsParsing] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+
   const handleAuthSubmit = (e) => {
     e.preventDefault();
     // Mock Auth
     setUser({ name: name || 'User', email });
-    setIsOnboarded(true);
+    // After auth, if no menu, go to upload, else finish
+    if (!menuData) {
+      setStep('upload');
+    } else {
+      setIsOnboarded(true);
+    }
   };
 
   const handleGuestEntry = () => {
-    setIsOnboarded(true);
+    setStep('upload');
+  };
+
+  const onFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      setIsParsing(true);
+      setUploadError(null);
+      const { parseExcelMenu } = await import('../utils/excelParser');
+      const data = await parseExcelMenu(file);
+      setMenuData(data);
+      // Wait a bit for effect
+      setTimeout(() => {
+        setIsOnboarded(true);
+      }, 1000);
+    } catch (err) {
+      console.error(err);
+      setUploadError("Oops! We couldn't parse that file. Make sure it's a valid Mess Menu Excel.");
+    } finally {
+      setIsParsing(false);
+    }
   };
 
   return (
@@ -218,6 +248,82 @@ export default function Onboarding() {
           </motion.div>
         )}
 
+        {step === 'upload' && (
+          <motion.div
+            key="upload"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="max-w-md w-full"
+          >
+            <div className="text-center mb-10">
+              <div className="w-16 h-16 bg-accent/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-accent">
+                <ArrowRight className="w-8 h-8 rotate-[-90deg]" />
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight mb-3">Upload Menu</h1>
+              <p className="text-muted-foreground text-sm max-w-[280px] mx-auto">
+                Upload your mess's <span className="font-bold text-foreground">.xlsx</span> file to generate your personalized schedule.
+              </p>
+            </div>
+
+            <div className="relative">
+              <input
+                type="file"
+                accept=".xlsx, .xls"
+                onChange={onFileUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-wait"
+                disabled={isParsing}
+              />
+              <div className={`
+                border-2 border-dashed rounded-[2rem] p-12 text-center transition-all duration-300
+                ${isParsing ? 'bg-muted/50 border-accent/20' : 'bg-muted/10 border-border/40 hover:border-accent/40 hover:bg-muted/20'}
+              `}>
+                {isParsing ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="w-10 h-10 border-4 border-accent/30 border-t-accent rounded-full animate-spin" />
+                    <p className="text-sm font-bold tracking-widest uppercase text-accent animate-pulse">Analyzing...</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="mb-4 flex justify-center">
+                      <div className="w-12 h-12 rounded-full bg-accent/5 flex items-center justify-center">
+                        <Mail className="w-6 h-6 text-accent/60" />
+                      </div>
+                    </div>
+                    <p className="text-sm font-semibold mb-1">Click or drag to upload</p>
+                    <p className="text-xs text-muted-foreground">Microsoft Excel (.xlsx)</p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {uploadError && (
+              <motion.p 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mt-4 text-xs text-red-500 font-medium text-center bg-red-500/5 py-3 rounded-xl border border-red-500/10"
+              >
+                {uploadError}
+              </motion.p>
+            )}
+
+            <div className="mt-8 flex items-center justify-between">
+              <Button 
+                variant="ghost" 
+                onClick={() => setStep('auth')}
+                className="text-muted-foreground hover:text-foreground text-xs font-bold uppercase tracking-widest pl-0"
+              >
+                <ArrowLeft className="mr-2 w-3 h-3" /> Back
+              </Button>
+              <button 
+                onClick={() => setIsOnboarded(true)}
+                className="text-xs font-bold text-muted-foreground/60 hover:text-foreground transition-colors uppercase tracking-widest"
+              >
+                Skip for Now
+              </button>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );

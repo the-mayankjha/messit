@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { UploadCloud, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
+import { motion } from 'motion/react';
+import { UploadCloud, AlertCircle } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { parseExcelMenu } from '../utils/excelParser';
 
@@ -57,64 +56,74 @@ export default function UploadMenu({ onComplete }) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto py-12 px-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold flex items-center gap-2">
-            Upload Your Mess Menu
-          </CardTitle>
-          <p className="text-muted-foreground mt-2">
-            Upload your college mess menu (Excel / .xlsx format) to schedule your meals.
-          </p>
-        </CardHeader>
-        <CardContent>
-          <form 
-            onDragEnter={handleDrag} 
-            onSubmit={(e) => e.preventDefault()}
-            className="flex flex-col items-center"
-          >
-            <input 
-              type="file" 
-              id="file-upload" 
-              className="hidden" 
-              accept=".xlsx"
-              onChange={handleChange} 
-            />
-            <label 
-              htmlFor="file-upload" 
-              className={`w-full flex-col flex items-center justify-center border-2 border-dashed rounded-xl p-12 transition-all cursor-pointer ${
-                dragActive ? 'border-accent bg-accent/20' : 'border-border hover:bg-muted/50'
-              }`}
-            >
-              <UploadCloud className="w-12 h-12 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium text-center">
-                Drag and drop your .xlsx file here
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                or click to browse
-              </p>
-            </label>
+    <div className="max-w-2xl mx-auto py-16 px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="text-center mb-12">
+        <div className="w-16 h-16 bg-accent/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-accent">
+          <UploadCloud className="w-8 h-8" />
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight mb-4">Update Menu Schedule</h1>
+        <p className="text-muted-foreground text-sm max-w-[320px] mx-auto leading-relaxed">
+          Upload your mess's <span className="font-bold text-foreground">.xlsx</span> file to refresh your automated meal schedule.
+        </p>
+      </div>
 
-            {loading && (
-              <div className="mt-6 flex items-center gap-2 text-accent">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-accent border-t-transparent"></div>
-                <span>Parsing menu...</span>
-              </div>
-            )}
-
-            {error && (
-              <div className="mt-6 flex items-center gap-2 text-red-500 bg-red-100 dark:bg-red-900/30 px-4 py-2 rounded-md">
-                <AlertCircle className="w-5 h-5" />
-                <span>{error}</span>
-              </div>
-            )}
-            
-            <div className="mt-8 text-center text-sm text-muted-foreground">
-              By uploading, we extract "Breakfast", "Lunch", "Snacks", and "Dinner" for each day of the week.
+      <div className="relative group">
+        <input 
+          type="file" 
+          id="file-upload" 
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-wait" 
+          accept=".xlsx"
+          onChange={handleChange} 
+          disabled={loading}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDrop={handleDrop}
+        />
+        <div className={`
+          border-2 border-dashed rounded-2xl p-16 text-center transition-all duration-300
+          ${dragActive ? 'bg-accent/10 border-accent/40 scale-[1.02]' : 'bg-muted/5 border-border/40 group-hover:border-accent/30 group-hover:bg-muted/10'}
+          ${loading ? 'opacity-50 grayscale' : ''}
+        `}>
+          {loading ? (
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-10 h-10 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
+              <p className="text-sm font-bold tracking-widest uppercase text-accent animate-pulse">Processing Menu...</p>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+          ) : (
+            <div className="space-y-4">
+              <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                <UploadCloud className="w-7 h-7 text-accent" />
+              </div>
+              <div>
+                <p className="text-base font-semibold">Drop your Excel file here</p>
+                <p className="text-sm text-muted-foreground mt-1">or click to browse your files</p>
+              </div>
+              <div className="pt-2">
+                <span className="px-3 py-1 bg-background border border-border/50 rounded-full text-[10px] font-bold tracking-widest uppercase text-muted-foreground/60">
+                  Microsoft Excel only
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {error && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6 p-4 rounded-2xl bg-red-500/5 border border-red-500/10 flex items-center gap-3 text-red-500"
+        >
+          <AlertCircle className="w-5 h-5 shrink-0" />
+          <p className="text-sm font-medium">{error}</p>
+        </motion.div>
+      )}
+
+      <div className="mt-12 text-center">
+        <p className="text-xs text-muted-foreground/50 leading-relaxed uppercase tracking-[0.1em] font-medium">
+          Parsed items: Breakfast, Lunch, Snacks, and Dinner
+        </p>
+      </div>
     </div>
   );
 }

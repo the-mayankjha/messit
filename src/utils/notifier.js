@@ -7,8 +7,8 @@ export const sendNotification = (mealName, mode) => {
   }
 
   if (Notification.permission === "granted") {
-    let title = "Meal Time!";
-    let body = `Time for ${mealName}.`;
+    let title = "Messit - Meal Time!";
+    let body = `Time for ${mealName}. See you at the mess!`;
     let icon = "/icon.png"; // PWA icon
 
     if (mode === 'stud') {
