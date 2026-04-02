@@ -21,16 +21,32 @@ export const sendNotification = (mealName, mode) => {
        body = `Time for ${mealName}. See you at the mess!`;
     }
 
-    new Notification(title, { body, icon });
-    // Trigger the Bell Animation via Store
-    useStore.setState({ isNotificationPending: true });
-    return { title, body }; 
+    try {
+      console.log(`[Notifier] Attempting to fire: ${title}`);
+      const notification = new Notification(title, { body, icon });
+      
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+
+      // Trigger the Bell Animation via Store
+      useStore.setState({ isNotificationPending: true });
+      return { success: true, title, body };
+    } catch (e) {
+      console.error("[Notifier] Error creating notification:", e);
+      return { success: false, error: e.message };
+    }
   } else if (Notification.permission !== "denied") {
+    console.log("[Notifier] Requesting permission...");
     Notification.requestPermission().then((permission) => {
       if (permission === "granted") {
         sendNotification(mealName, mode);
       }
     });
+  } else {
+    console.warn(`[Notifier] Permission denied. Current state: ${Notification.permission}`);
+    return { success: false, error: "Permission denied" };
   }
 };
 
