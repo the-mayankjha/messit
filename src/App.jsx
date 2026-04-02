@@ -34,6 +34,8 @@ export default function App() {
   const bellRef = useRef(null);
   const settingsIconRef = useRef(null);
   const uploadIconRef = useRef(null);
+  const mobileSettingsIconRef = useRef(null);
+  const mobileUploadIconRef = useRef(null);
 
   // Apply Theme and Accent
   useEffect(() => {
@@ -111,11 +113,13 @@ export default function App() {
 
   const handleNavClick = (id) => {
     setCurrentPage(id);
-    if (id === 'settings' && settingsIconRef.current) {
-      settingsIconRef.current.startAnimation();
+    if (id === 'settings') {
+      settingsIconRef.current?.startAnimation();
+      mobileSettingsIconRef.current?.startAnimation();
     }
-    if (id === 'upload' && uploadIconRef.current) {
-      uploadIconRef.current.startAnimation();
+    if (id === 'upload') {
+      uploadIconRef.current?.startAnimation();
+      mobileUploadIconRef.current?.startAnimation();
     }
   };
 
@@ -138,7 +142,7 @@ export default function App() {
             <span className="tracking-tight">Messit</span>
           </div>
           
-          <nav className="flex items-center gap-2 sm:gap-6">
+          <nav className="hidden sm:flex items-center gap-2 sm:gap-6">
             <div className="flex items-center bg-muted/50 rounded-2xl p-1.5 gap-1 shadow-inner">
               {navItems.map((item) => {
                 const Icon = item.icon;
@@ -188,11 +192,60 @@ export default function App() {
               />
             </div>
           </nav>
+
+          {/* Mobile Bell (visible only on mobile) */}
+          <div className="sm:hidden flex items-center">
+            <BellRingIcon 
+              ref={bellRef} // Can share ref as only one is visible at a time
+              className="text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer p-2 hover:bg-muted/50 rounded-xl" 
+              size={22}
+              strokeWidth={1.8}
+              onClick={() => setNotificationPending(false)}
+            />
+          </div>
         </div>
       </header>
 
+      {/* Bottom Navigation for Mobile */}
+      <nav className="sm:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[min(400px,90%)] bg-background/80 backdrop-blur-xl border border-border/40 rounded-[2rem] p-1.5 shadow-2xl flex items-center justify-around gap-1 animate-in slide-in-from-bottom-10 duration-700">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = currentPage === item.id;
+          
+          if (item.id === 'dashboard' && !menuData) return null;
+
+          return (
+            <button
+              key={item.id}
+              onClick={() => handleNavClick(item.id)}
+              className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl transition-all duration-300 relative ${
+                isActive 
+                  ? 'bg-accent/10 text-accent-foreground' 
+                  : 'text-muted-foreground/60'
+              }`}
+            >
+              {item.id === 'settings' ? (
+                <SettingsIcon ref={isActive ? mobileSettingsIconRef : null} size={22} strokeWidth={isActive ? 2.2 : 1.8} />
+              ) : item.id === 'upload' ? (
+                <DashboardIcon ref={isActive ? mobileUploadIconRef : null} size={22} strokeWidth={isActive ? 2.2 : 1.8} />
+              ) : (
+                <Icon className="w-5 h-5" size={22} strokeWidth={isActive ? 2.2 : 1.8} />
+              )}
+              <span className="text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
+              {isActive && (
+                <motion.div
+                  layoutId="active-pill-mobile"
+                  className="absolute inset-0 bg-accent/5 rounded-2xl -z-10"
+                  transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+            </button>
+          );
+        })}
+      </nav>
+
       {/* Main Content Area */}
-      <main className="flex-1">
+      <main className="flex-1 pb-28 sm:pb-20">
         {currentPage === 'dashboard' ? (
           <Dashboard />
         ) : currentPage === 'upload' ? (
