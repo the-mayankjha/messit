@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Button } from '../components/ui/Button';
 import { Moon, Sun, Check, Crown, Dumbbell, Bell } from 'lucide-react';
 import { BellRingIcon } from '../components/ui/icons/BellRingIcon';
+import { useAuth0 } from '@auth0/auth0-react';
 import { requestNotificationPermission, sendNotification } from '../utils/notifier';
 
 export default function Settings() {
+  const { logout } = useAuth0();
   const { 
     theme, 
     setTheme, 
@@ -18,6 +20,14 @@ export default function Settings() {
     setIsOnboarded,
     setMenuData
   } = useStore();
+
+  const handleLogout = () => {
+    // Clear local state
+    setUser(null);
+    setIsOnboarded(false);
+    // Logout from Auth0
+    logout({ logoutParams: { returnTo: window.location.origin } });
+  };
   const [testMeal, setTestMeal] = useState('Lunch');
   const [lastTestResult, setLastTestResult] = useState(null);
 
@@ -212,7 +222,7 @@ export default function Settings() {
           <CardContent className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-4">
               <Button 
-                onClick={() => { setUser(null); setIsOnboarded(false); }}
+                onClick={handleLogout}
                 variant="outline" 
                 className="border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-xl flex-1"
               >

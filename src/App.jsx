@@ -11,6 +11,7 @@ import { SettingsIcon } from './components/ui/icons/SettingsIcon';
 import { BellRingIcon } from './components/ui/icons/BellRingIcon';
 import { DashboardIcon } from './components/ui/icons/DashboardIcon';
 import { SearchIcon } from './components/ui/icons/SearchIcon';
+import { useAuth0 } from '@auth0/auth0-react';
 import { requestNotificationPermission, sendNotification } from './utils/notifier';
 import NotificationDrawer from './components/NotificationDrawer';
 
@@ -22,8 +23,25 @@ export default function App() {
     notificationMode, 
     isNotificationPending, 
     setNotificationPending,
-    isOnboarded 
+    isOnboarded,
+    setIsOnboarded,
+    setUser 
   } = useStore();
+
+  const { user: auth0User, isAuthenticated, isLoading } = useAuth0();
+
+  // Sync Auth0 User with Store
+  useEffect(() => {
+    if (isAuthenticated && auth0User) {
+      setUser({
+        name: auth0User.name,
+        email: auth0User.email,
+        picture: auth0User.picture
+      });
+      // If we're authenticated, we're onboarded
+      setIsOnboarded(true);
+    }
+  }, [isAuthenticated, auth0User, setUser, setIsOnboarded]);
   
   // 'dashboard' | 'upload' | 'settings'
   const [currentPage, setCurrentPage] = useState(menuData ? 'dashboard' : 'upload');

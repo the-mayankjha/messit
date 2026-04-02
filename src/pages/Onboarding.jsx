@@ -1,15 +1,19 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store/useStore';
 import { Button } from '../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { ChevronRight, Mail, Lock, User, ArrowRight, ArrowLeft } from 'lucide-react';
 import { GithubIcon } from '../components/ui/icons/GithubIcon';
 import { GoogleIcon } from '../components/ui/icons/GoogleIcon';
 import { Input } from '../components/ui/Input';
-import { useRef } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 
 export default function Onboarding() {
+  const { 
+    loginWithRedirect, 
+    isLoading: isAuthLoading 
+  } = useAuth0();
+
   const { setIsOnboarded, setUser, setMenuData, menuData } = useStore();
   
   const googleRef = useRef(null);
@@ -29,14 +33,21 @@ export default function Onboarding() {
 
   const handleAuthSubmit = (e) => {
     e.preventDefault();
-    // Mock Auth
-    setUser({ name: name || 'User', email });
-    // After auth, if no menu, go to upload, else finish
-    if (!menuData) {
-      setStep('upload');
-    } else {
-      setIsOnboarded(true);
-    }
+    // Redirect to Auth0
+    loginWithRedirect({
+      authorizationParams: {
+        screen_hint: authMode === 'signup' ? 'signup' : 'login',
+        login_hint: email
+      }
+    });
+  };
+
+  const handleSocialAuth = (connection) => {
+    loginWithRedirect({
+      authorizationParams: {
+        connection
+      }
+    });
   };
 
   const handleGuestEntry = () => {
@@ -64,6 +75,15 @@ export default function Onboarding() {
       setIsParsing(false);
     }
   };
+
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 space-y-6">
+        <div className="w-16 h-16 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
+        <p className="text-xs font-bold tracking-widest uppercase text-accent animate-pulse">Initializing Security...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-accent/5 via-background to-background">
@@ -158,7 +178,7 @@ export default function Onboarding() {
               <Button 
                 variant="ghost" 
                 className="py-7 rounded-2xl border-none hover:bg-muted/30 group bg-muted/20"
-                onClick={handleGuestEntry}
+                onClick={() => handleSocialAuth('google-oauth2')}
                 onMouseEnter={() => googleRef.current?.startAnimation()}
                 onMouseLeave={() => googleRef.current?.stopAnimation()}
               >
@@ -173,7 +193,7 @@ export default function Onboarding() {
               <Button 
                 variant="ghost" 
                 className="py-7 rounded-2xl border-none hover:bg-muted/30 group bg-muted/20"
-                onClick={handleGuestEntry}
+                onClick={() => handleSocialAuth('github')}
                 onMouseEnter={() => githubRef.current?.startAnimation()}
                 onMouseLeave={() => githubRef.current?.stopAnimation()}
               >
@@ -218,15 +238,22 @@ export default function Onboarding() {
                 onChange={(e) => setEmail(e.target.value)}
               />
 
-              <Input
-                label="Password"
-                icon={Lock}
-                type="password"
-                placeholder="••••••••"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              {authMode === 'login' && (
+                <div className="space-y-1">
+                  <Input
+                    label="Password"
+                    icon={Lock}
+                    type="password"
+                    placeholder="••••••••"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <div className="text-right">
+                    <p className="text-[10px] text-muted-foreground mt-1">Passwords will be managed by Auth0.</p>
+                  </div>
+                </div>
+              )}
 
               <Button type="submit" className="w-full py-7 mt-4 rounded-2xl shadow-lg shadow-accent/10 font-bold tracking-wide">
                 {authMode === 'login' ? 'Sign In' : 'Create Account'}
