@@ -128,14 +128,15 @@ export default function Dashboard() {
             await navigator.share({
               files: [file],
               title: `Messit - ${meal.label}`,
-              text: `Check out today's ${meal.label} menu!`,
+              text: `Check out today's ${meal.label} menu with Messit! Developed By Mayank Jha`,
+              url: 'https://messit.nfks.co.in'
             });
           } else if (navigator.share) {
              // Fallback to text if file sharing is not supported
              await navigator.share({
                 title: `Messit - ${meal.label}`,
-                text: `Check out today's ${meal.label} menu: ${items ? items.join(', ') : 'No menu found.'}`,
-                url: window.location.href
+                text: `Check out today's ${meal.label} menu with Messit! Developed By Mayank Jha\nMenu: ${items ? items.join(', ') : 'No menu found.'}`,
+                url: 'https://messit.nfks.co.in'
               });
           }
         }
