@@ -15,6 +15,32 @@ import { CookingPotIcon } from '../components/ui/icons/CookingPotIcon';
 export default function Search() {
   const { menuData } = useStore();
   const [query, setQuery] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
+
+  // Extract all unique dishes from the entire month
+  const allDishes = useMemo(() => {
+    if (!menuData) return [];
+    const dishes = new Set();
+    Object.values(menuData).forEach(day => {
+      ['breakfast', 'lunch', 'snacks', 'dinner'].forEach(mealType => {
+        (day[mealType] || []).forEach(item => {
+          if (item) dishes.add(item.trim());
+        });
+      });
+    });
+    return Array.from(dishes).sort();
+  }, [menuData]);
+
+  // Filtered suggestions based on user input
+  const suggestions = useMemo(() => {
+    const low = query.toLowerCase().trim();
+    if (!low || !allDishes.length || /^\d+$/.test(low)) return [];
+    
+    return allDishes
+      .filter(dish => dish.toLowerCase().includes(low))
+      .filter(dish => dish.toLowerCase() !== low) // Don't suggest the exact same word
+      .slice(0, 6);
+  }, [query, allDishes]);
 
   // Map dates to day names for the current month
   const dayNameMap = useMemo(() => {
@@ -97,19 +123,54 @@ export default function Search() {
           placeholder="Try '15', 'Monday', 'Paneer'..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setTimeout(() => setIsFocused(false), 150)}
+          suffix={
+            <AnimatePresence>
+              {query && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  onClick={() => setQuery('')}
+                  className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                >
+                  Clear
+                </motion.button>
+              )}
+            </AnimatePresence>
+          }
           className="py-6 sm:py-9 text-base sm:text-lg rounded-[1.5rem] sm:rounded-[2.5rem] shadow-xl sm:shadow-2xl transition-all focus:ring-accent/20 border-border/40 group-hover:border-accent/30 group-focus-within:border-accent bg-background"
         />
+        
+        {/* Autosuggestions Dropdown */}
         <AnimatePresence>
-          {query && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
+          {isFocused && suggestions.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              onClick={() => setQuery('')}
-              className="absolute right-6 top-1/2 -translate-y-1/2 text-xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground p-3"
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="absolute top-full mt-2 left-0 right-0 z-50 overflow-hidden rounded-3xl border border-border/40 bg-card/60 backdrop-blur-xl shadow-2xl"
             >
-              Clear
-            </motion.button>
+              <div className="p-2">
+                {suggestions.map((suggestion, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setQuery(suggestion);
+                      setIsFocused(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm sm:text-base rounded-2xl hover:bg-accent/10 transition-colors group/item"
+                  >
+                    <SearchIcon size={14} className="text-muted-foreground group-hover/item:text-accent transition-colors" />
+                    <span className="flex-1 truncate font-medium">{suggestion}</span>
+                    <div className="flex items-center gap-1.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-accent">Select</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
