@@ -1,12 +1,19 @@
 "use client";
 
 import { motion, useAnimation } from "motion/react";
-import { forwardRef, useCallback, useImperativeHandle, useRef } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
 import { cn } from "../../../lib/utils";
 
 const CLOUD_VARIANTS = {
-  initial: { y: -2 },
-  active: { y: 0 },
+  initial: { y: 0 },
+  animate: {
+    y: [0, -3, 0],
+    transition: {
+      duration: 1.5,
+      repeat: Infinity,
+      ease: "easeInOut"
+    }
+  },
 };
 
 const CloudUploadIcon = forwardRef(
@@ -14,11 +21,15 @@ const CloudUploadIcon = forwardRef(
     const controls = useAnimation();
     const isControlledRef = useRef(false);
 
+    useEffect(() => {
+      controls.start("animate");
+    }, [controls]);
+
     useImperativeHandle(ref, () => {
       isControlledRef.current = true;
       return {
-        startAnimation: () => controls.start("initial"),
-        stopAnimation: () => controls.start("active"),
+        startAnimation: () => controls.start("animate"),
+        stopAnimation: () => controls.start("initial"),
       };
     });
 
@@ -27,7 +38,7 @@ const CloudUploadIcon = forwardRef(
         if (isControlledRef.current) {
           onMouseEnter?.(e);
         } else {
-          controls.start("initial");
+          controls.start("animate");
         }
       },
       [controls, onMouseEnter]
@@ -38,7 +49,8 @@ const CloudUploadIcon = forwardRef(
         if (isControlledRef.current) {
           onMouseLeave?.(e);
         } else {
-          controls.start("active");
+          // Keep it animating even after leave if not controlled
+          controls.start("animate");
         }
       },
       [controls, onMouseLeave]
