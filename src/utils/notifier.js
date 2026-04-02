@@ -23,12 +23,24 @@ export const sendNotification = (mealName, mode) => {
 
     try {
       console.log(`[Notifier] Attempting to fire: ${title}`);
-      const notification = new Notification(title, { body, icon });
       
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
+      // Check for Service Worker registration (Required for Mobile PWA)
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.showNotification(title, {
+            body,
+            icon,
+            badge: '/favicon.png', // Small icon for notification bar
+            vibrate: [200, 100, 200],
+            tag: 'messit-meal-notification', // Prevent duplicate stacking
+            renotify: true,
+            data: { url: window.location.origin }
+          });
+        });
+      } else {
+        // Fallback for non-SW environments (Legacy)
+        new Notification(title, { body, icon });
+      }
 
       // Trigger the Bell Animation via Store
       useStore.setState({ isNotificationPending: true });
