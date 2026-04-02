@@ -81,10 +81,10 @@ export default function App() {
       if (!menuData) return;
 
       const schedules = [
-        { name: 'Breakfast', h: 7, m: 15 },
-        { name: 'Lunch', h: 12, m: 30 },
-        { name: 'Snacks', h: 16, m: 45 },
-        { name: 'Dinner', h: 19, m: 15 }
+        { name: 'Breakfast', h: 7, m: 10 },
+        { name: 'Lunch', h: 12, m: 25 },
+        { name: 'Snacks', h: 16, m: 40 },
+        { name: 'Dinner', h: 19, m: 10 }
       ];
 
       schedules.forEach(s => {
