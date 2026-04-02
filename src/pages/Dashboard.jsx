@@ -115,6 +115,10 @@ export default function Dashboard() {
             backgroundColor: '#111', // Match Notion Dark
             style: { borderRadius: '0' }, // Capture clean edges
             cacheBust: true,
+            filter: (node) => {
+              const exclusionClasses = ['capture-exclude'];
+              return !exclusionClasses.some(cls => node.classList?.contains(cls));
+            }
           });
 
           const blob = await (await fetch(dataUrl)).blob();
@@ -145,7 +149,7 @@ export default function Dashboard() {
     return (
       <div ref={cardRef} className="relative h-full">
         {isCapturing && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-md rounded-2xl animate-in fade-in duration-300">
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-md rounded-2xl animate-in fade-in duration-300 capture-exclude">
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
                 <SendIcon size={44} strokeWidth={1.4} className="text-foreground" isAnimated={true} />
@@ -180,7 +184,7 @@ export default function Dashboard() {
               <button 
                 onClick={handleShare}
                 disabled={isCapturing}
-                className="p-2 rounded-xl text-muted-foreground/30 hover:text-foreground transition-all duration-300 disabled:opacity-50"
+                className="p-2 rounded-xl text-muted-foreground/30 hover:text-foreground transition-all duration-300 disabled:opacity-50 capture-exclude"
               >
                 <SendIcon ref={sendIconRef} size={24} strokeWidth={1.8} />
               </button>
