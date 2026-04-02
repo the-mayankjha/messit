@@ -7,6 +7,9 @@ export const sendNotification = (mealName, mode) => {
   }
 
   if (Notification.permission === "granted") {
+    let title, body;
+    const icon = "/icon.png";
+
     if (mode === 'stud') {
       title = `Yo Bro, Fuel Up! 🥩`;
       body = `Grab your protein! ${mealName} is being served at the mess. Let's get those gains.`;
