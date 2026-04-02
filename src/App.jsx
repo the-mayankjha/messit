@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
 import { useStore } from './store/useStore';
 import Dashboard from './pages/Dashboard';
 import UploadMenu from './pages/UploadMenu';
 import Settings from './pages/Settings';
+import Search from './pages/Search';
 import Onboarding from './pages/Onboarding';
 import { UtensilsCrossed } from 'lucide-react';
 import { SettingsIcon } from './components/ui/icons/SettingsIcon';
 import { BellRingIcon } from './components/ui/icons/BellRingIcon';
 import { DashboardIcon } from './components/ui/icons/DashboardIcon';
+import { SearchIcon } from './components/ui/icons/SearchIcon';
 import { requestNotificationPermission, sendNotification } from './utils/notifier';
 
 export default function App() {
@@ -34,8 +36,10 @@ export default function App() {
   const bellRef = useRef(null);
   const settingsIconRef = useRef(null);
   const uploadIconRef = useRef(null);
+  const searchIconRef = useRef(null);
   const mobileSettingsIconRef = useRef(null);
   const mobileUploadIconRef = useRef(null);
+  const mobileSearchIconRef = useRef(null);
 
   // Apply Theme and Accent
   useEffect(() => {
@@ -107,6 +111,7 @@ export default function App() {
 
   const navItems = [
     { id: 'dashboard', label: 'Menu', icon: UtensilsCrossed },
+    { id: 'search', label: 'Search', icon: SearchIcon },
     { id: 'upload', label: 'Upload', icon: DashboardIcon },
     { id: 'settings', label: 'Settings', icon: SettingsIcon }
   ];
@@ -120,6 +125,10 @@ export default function App() {
     if (id === 'upload') {
       uploadIconRef.current?.startAnimation();
       mobileUploadIconRef.current?.startAnimation();
+    }
+    if (id === 'search') {
+      searchIconRef.current?.startAnimation();
+      mobileSearchIconRef.current?.startAnimation();
     }
   };
 
@@ -164,6 +173,8 @@ export default function App() {
                       <SettingsIcon ref={settingsIconRef} size={19} strokeWidth={1.8} />
                     ) : item.id === 'upload' ? (
                       <DashboardIcon ref={uploadIconRef} size={19} strokeWidth={1.8} />
+                    ) : item.id === 'search' ? (
+                      <SearchIcon ref={searchIconRef} size={19} strokeWidth={1.8} />
                     ) : (
                       <Icon className="w-4.5 h-4.5" size={19} strokeWidth={1.8} />
                     )}
@@ -228,6 +239,8 @@ export default function App() {
                 <SettingsIcon ref={isActive ? mobileSettingsIconRef : null} size={22} strokeWidth={isActive ? 2.2 : 1.8} />
               ) : item.id === 'upload' ? (
                 <DashboardIcon ref={isActive ? mobileUploadIconRef : null} size={22} strokeWidth={isActive ? 2.2 : 1.8} />
+              ) : item.id === 'search' ? (
+                <SearchIcon ref={isActive ? mobileSearchIconRef : null} size={22} strokeWidth={isActive ? 2.2 : 1.8} />
               ) : (
                 <Icon className="w-5 h-5" size={22} strokeWidth={isActive ? 2.2 : 1.8} />
               )}
@@ -246,13 +259,17 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 pb-28 sm:pb-20">
-        {currentPage === 'dashboard' ? (
-          <Dashboard />
-        ) : currentPage === 'upload' ? (
-          <UploadMenu onComplete={() => setCurrentPage('dashboard')} />
-        ) : currentPage === 'settings' ? (
-          <Settings />
-        ) : null}
+        <LayoutGroup>
+          {currentPage === 'dashboard' ? (
+            <Dashboard />
+          ) : currentPage === 'search' ? (
+            <Search />
+          ) : currentPage === 'upload' ? (
+            <UploadMenu onComplete={() => setCurrentPage('dashboard')} />
+          ) : currentPage === 'settings' ? (
+            <Settings />
+          ) : null}
+        </LayoutGroup>
       </main>
 
     </div>

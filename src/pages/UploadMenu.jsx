@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { motion } from 'motion/react';
-import { UploadCloud, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import { CloudUploadIcon } from '../components/ui/icons/CloudUploadIcon';
 import { useStore } from '../store/useStore';
 import { parseExcelMenu } from '../utils/excelParser';
+import { motion } from 'motion/react';
 
 export default function UploadMenu({ onComplete }) {
   const [dragActive, setDragActive] = useState(false);
@@ -58,9 +59,6 @@ export default function UploadMenu({ onComplete }) {
   return (
     <div className="max-w-2xl mx-auto py-16 px-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="text-center mb-12">
-        <div className="w-16 h-16 bg-accent/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-accent">
-          <UploadCloud className="w-8 h-8" />
-        </div>
         <h1 className="text-3xl font-bold tracking-tight mb-4">Update Menu Schedule</h1>
         <p className="text-muted-foreground text-sm max-w-[320px] mx-auto leading-relaxed">
           Upload your mess's <span className="font-bold text-foreground">.xlsx</span> file to refresh your automated meal schedule.
@@ -91,8 +89,8 @@ export default function UploadMenu({ onComplete }) {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                <UploadCloud className="w-7 h-7 text-accent" />
+              <div className="mb-4 flex justify-center">
+                <CloudUploadIcon size={56} className="text-accent" />
               </div>
               <div>
                 <p className="text-base font-semibold">Drop your Excel file here</p>
