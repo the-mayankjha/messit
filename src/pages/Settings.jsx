@@ -6,7 +6,17 @@ import { BellRingIcon } from '../components/ui/icons/BellRingIcon';
 import { requestNotificationPermission, sendNotification } from '../utils/notifier';
 
 export default function Settings() {
-  const { theme, setTheme, accentColor, setAccentColor, notificationMode, setNotificationMode } = useStore();
+  const { 
+    theme, 
+    setTheme, 
+    accentColor, 
+    setAccentColor, 
+    notificationMode, 
+    setNotificationMode,
+    setUser,
+    setIsOnboarded,
+    setMenuData
+  } = useStore();
 
   const themes = [
     { id: 'light', icon: Sun, label: 'Light' },
@@ -142,6 +152,32 @@ export default function Settings() {
               </Button>
             </div>
 
+          </CardContent>
+        </Card>
+
+        {/* Danger Zone */}
+        <Card className="border-red-500/20 bg-red-500/5">
+          <CardHeader>
+            <CardTitle className="text-xl text-red-500">Danger Zone</CardTitle>
+            <p className="text-sm text-red-500/60 mt-1">Irreversible actions for your account and data.</p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button 
+                onClick={() => { setUser(null); setIsOnboarded(false); }}
+                variant="outline" 
+                className="border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-xl flex-1"
+              >
+                Log Out
+              </Button>
+              <Button 
+                onClick={() => setMenuData(null)}
+                variant="outline" 
+                className="border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-xl flex-1"
+              >
+                Clear Menu Data
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

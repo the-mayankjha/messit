@@ -17,6 +17,12 @@ export const useStore = create(
       menuData: null, 
       setMenuData: (menuData) => set({ menuData }),
 
+      // Onboarding & Auth
+      isOnboarded: false,
+      user: null, // { name, email } mock
+      setIsOnboarded: (isOnboarded) => set({ isOnboarded }),
+      setUser: (user) => set({ user }),
+
       // Real-time UI State (Un-persistent)
       isNotificationPending: false,
       setNotificationPending: (isNotificationPending) => set({ isNotificationPending }),

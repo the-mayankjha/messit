@@ -4,6 +4,7 @@ import { useStore } from './store/useStore';
 import Dashboard from './pages/Dashboard';
 import UploadMenu from './pages/UploadMenu';
 import Settings from './pages/Settings';
+import Onboarding from './pages/Onboarding';
 import { UtensilsCrossed } from 'lucide-react';
 import { SettingsIcon } from './components/ui/icons/SettingsIcon';
 import { BellRingIcon } from './components/ui/icons/BellRingIcon';
@@ -11,10 +12,25 @@ import { DashboardIcon } from './components/ui/icons/DashboardIcon';
 import { requestNotificationPermission, sendNotification } from './utils/notifier';
 
 export default function App() {
-  const { theme, accentColor, menuData, notificationMode, isNotificationPending, setNotificationPending } = useStore();
+  const { 
+    theme, 
+    accentColor, 
+    menuData, 
+    notificationMode, 
+    isNotificationPending, 
+    setNotificationPending,
+    isOnboarded 
+  } = useStore();
   
   // 'dashboard' | 'upload' | 'settings'
   const [currentPage, setCurrentPage] = useState(menuData ? 'dashboard' : 'upload');
+
+  // Sync current page with menuData availability
+  useEffect(() => {
+    if (!menuData && currentPage === 'dashboard') {
+      setCurrentPage('upload');
+    }
+  }, [menuData, currentPage]);
   const bellRef = useRef(null);
   const settingsIconRef = useRef(null);
   const uploadIconRef = useRef(null);
@@ -102,6 +118,10 @@ export default function App() {
       uploadIconRef.current.startAnimation();
     }
   };
+
+  if (!isOnboarded) {
+    return <Onboarding />;
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col transition-colors duration-200">
