@@ -15,6 +15,7 @@ import { BellRingIcon } from '../components/ui/icons/BellRingIcon';
 import { useAuth0 } from '@auth0/auth0-react';
 import { requestNotificationPermission, sendNotification } from '../utils/notifier';
 import { ACCENT_COLORS } from '../constants/colors';
+import { submitCoordinatorRequest, getUserCoordinatorRequest } from '../lib/supabase';
 
 export default function Settings() {
   const { logout, user: auth0User, isAuthenticated } = useAuth0();
@@ -27,7 +28,8 @@ export default function Settings() {
     notificationMode, setNotificationMode,
     hostel, setProfile,
     roomNumber, messType,
-    setIsOnboarded, setMenuData
+    setIsOnboarded, setMenuData,
+    addNotification, setNotificationPending
   } = useStore();
 
   const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -40,6 +42,8 @@ export default function Settings() {
   const [localMess, setLocalMess] = useState(messType);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [coordinatorRequest, setCoordinatorRequest] = useState(null);
+  const [isRequesting, setIsRequesting] = useState(false);
 
   const hostels = {
     male: ['MH1', 'MH2', 'MH3', 'MH4', 'MH5', 'MH6', 'MH7'],
@@ -47,11 +51,12 @@ export default function Settings() {
   };
 
   const loginProvider = useMemo(() => {
-    if (!auth0User?.sub) return 'Guest';
+    if (!isAuthenticated) return 'Guest';
+    if (!auth0User?.sub) return 'Processing...'; // Prevent flicker to Guest
     if (auth0User.sub.startsWith('google')) return 'Google';
     if (auth0User.sub.startsWith('github')) return 'GitHub';
     return 'Email';
-  }, [auth0User]);
+  }, [auth0User, isAuthenticated]);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -83,6 +88,36 @@ export default function Settings() {
       console.error("Sync failed:", err);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.email) {
+      getUserCoordinatorRequest(user.email).then(res => {
+        if (res.success && res.data) {
+          setCoordinatorRequest(res.data);
+        }
+      });
+    }
+  }, [user?.email]);
+
+  const handleRequestCoordinator = async () => {
+    if (!user?.email || !user?.name || !hostel) return;
+    setIsRequesting(true);
+    try {
+      const res = await submitCoordinatorRequest(user.email, user.name, hostel);
+      if (res.success) {
+        setCoordinatorRequest(res.data[0]);
+        addNotification(
+          "Authority Protocol Initiated 🛡️", 
+          "Your request to become a Coordinator is now under review by the High Council."
+        );
+        setNotificationPending(true);
+      }
+    } catch (err) {
+      console.error("Request failed:", err);
+    } finally {
+      setIsRequesting(false);
     }
   };
 
@@ -250,6 +285,38 @@ export default function Settings() {
                    </div>
                  </div>
                  <p className="text-[10px] text-muted-foreground mt-3 italic text-center sm:text-left">Your role is set during onboarding and cannot be changed without administrator approval.</p>
+
+                 {/* Coordinator Request Flow */}
+                 {(role === 'None' || !role) && (
+                   <div className="mt-4 p-4 rounded-2xl bg-secondary/20 border border-dashed border-border/60">
+                     <div className="flex items-start justify-between gap-4">
+                       <div className="min-w-0">
+                         <h4 className="text-xs font-bold uppercase tracking-widest text-foreground mb-1">Administrative Authority</h4>
+                         <p className="text-[10px] text-muted-foreground leading-relaxed">
+                           Want to help manage the hostel mess? Request to become a <strong>Coordinator</strong>.
+                         </p>
+                       </div>
+                       {coordinatorRequest ? (
+                         <div className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${
+                           coordinatorRequest.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
+                           coordinatorRequest.status === 'rejected' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                           'bg-green-500/10 text-green-500 border-green-500/20'
+                         }`}>
+                           {coordinatorRequest.status}
+                         </div>
+                       ) : (
+                         <Button 
+                           onClick={handleRequestCoordinator}
+                           disabled={isRequesting}
+                           variant="outline" 
+                           className="h-8 px-4 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-primary/10 border-primary/20 hover:border-primary/40 text-primary transition-all active:scale-95 flex-shrink-0"
+                         >
+                           {isRequesting ? <RefreshCw className="animate-spin w-3 h-3" /> : 'Request Access'}
+                         </Button>
+                       )}
+                     </div>
+                   </div>
+                 )}
               </div>
 
               <div className="pt-6 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-4">

@@ -1,24 +1,26 @@
 import { useStore } from '../store/useStore';
 
-export const sendNotification = (mealName, mode) => {
+export const sendNotification = (mealName, mode, customTitle = null, customBody = null) => {
   if (!("Notification" in window)) {
     console.log("This browser does not support desktop notification");
     return;
   }
 
   if (Notification.permission === "granted") {
-    let title, body;
+    let title = customTitle, body = customBody;
     const icon = "/icon.png";
 
-    if (mode === 'stud') {
-      title = `Yo Bro, Fuel Up! 🥩`;
-      body = `Grab your protein! ${mealName} is being served at the mess. Let's get those gains.`;
-    } else if (mode === 'princess') {
-      title = `Your Meal Awaits, Princess ✨`;
-      body = `It's time for a delicious ${mealName}. Treat yourself well today! 🌸`;
-    } else {
-       title = "Messit - Meal Time!";
-       body = `Time for ${mealName}. See you at the mess!`;
+    if (!title || !body) {
+      if (mode === 'stud') {
+        title = `Yo Bro, Fuel Up! 🥩`;
+        body = `Grab your protein! ${mealName} is being served at the mess. Let's get those gains.`;
+      } else if (mode === 'princess') {
+        title = `Your Meal Awaits, Princess ✨`;
+        body = `It's time for a delicious ${mealName}. Treat yourself well today! 🌸`;
+      } else {
+        title = "Messit - Meal Time!";
+        body = `Time for ${mealName}. See you at the mess!`;
+      }
     }
 
     try {

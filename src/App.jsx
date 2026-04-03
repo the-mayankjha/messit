@@ -7,6 +7,7 @@ import UploadMenu from './pages/UploadMenu';
 import Settings from './pages/Settings';
 import Search from './pages/Search';
 import Onboarding from './pages/Onboarding';
+import AdminDashboard from './pages/AdminDashboard';
 import { UtensilsCrossed } from 'lucide-react';
 import { SettingsIcon } from './components/ui/icons/SettingsIcon';
 import { BellRingIcon } from './components/ui/icons/BellRingIcon';
@@ -21,6 +22,7 @@ import { SnacksIcon } from './components/ui/icons/SnacksIcon';
 import { DinnerIcon } from './components/ui/icons/DinnerIcon';
 import { CookingPotIcon } from './components/ui/icons/CookingPotIcon';
 import { CalendarDaysIcon } from './components/ui/icons/CalendarDaysIcon';
+import { getMessMenu } from './lib/supabase';
 
 export default function App() {
   const { 
@@ -35,8 +37,16 @@ export default function App() {
     setUser,
     setProfile,
     hostel, // Track profile completion
+    messType, // Support cloud sync
+    role,
     notifications, 
-    setDrawerOpen
+    setDrawerOpen,
+    isSyncing,
+    syncStatus,
+    setSyncStatus,
+    setMenuData,
+    cloudMenuInfo,
+    setCloudMenuInfo
   } = useStore();
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -84,26 +94,36 @@ export default function App() {
           picture: auth0User.picture
         });
 
-        // 🚀 SMART ONBOARDING SKIP:
-        // If we don't have a hostel locally, check Supabase.
-        if (!hostel) {
-          try {
-            const { getSupabaseProfile } = await import('./lib/supabase');
-            const { success, data } = await getSupabaseProfile(auth0User.email);
-            
-            if (success && data && data.hostel) {
-              setProfile(data);
-              setIsOnboarded(true);
-            } else {
-              setIsOnboarded(false);
+        // 🚀 SMART PROFILE REFRESH:
+        // Always fetch the latest profile from Supabase for authenticated users
+        // to ensure roles, names, and preferences are perfectly in sync.
+        try {
+          const { getSupabaseProfile } = await import('./lib/supabase');
+          const { success, data } = await getSupabaseProfile(auth0User.email);
+          
+          if (success && data) {
+            // Check for role change to notify student
+            if (role === 'None' && data.role !== 'None') {
+              const { addNotification, setNotificationPending } = useStore.getState();
+              addNotification(
+                "Protocol Clearance Received 🛡️",
+                `Your authority request was approved! You are now a ${data.role}.`
+              );
+              setNotificationPending(true);
             }
-          } catch (err) {
-            console.error("Profile sync error:", err);
+            
+            setProfile(data);
+            setIsOnboarded(true);
+          } else if (!hostel) {
+            // New user without a profile in Supabase
             setIsOnboarded(false);
+          } else {
+            // Existing user (Guest mode or local-only)
+            setIsOnboarded(true);
           }
-        } else {
-          // If we have it locally, we're definitely onboarded
-          setIsOnboarded(true);
+        } catch (err) {
+          console.error("Profile sync error:", err);
+          if (!hostel) setIsOnboarded(false);
         }
         setIsSyncingProfile(false);
       }
@@ -118,6 +138,82 @@ export default function App() {
       setCurrentPage('upload');
     }
   }, [menuData, currentPage]);
+
+  // Cloud Menu Sync Logic
+  useEffect(() => {
+    const syncCloudMenu = async () => {
+      if (isSyncing || !isAuthenticated || !hostel || syncStatus !== 'idle') return;
+      
+      setSyncStatus({ isSyncing: true, syncStatus: 'syncing' });
+      try {
+        const { getMessMenu } = await import('./lib/supabase');
+        const res = await getMessMenu(hostel, messType);
+        
+        if (res.success && res.data) {
+          setMenuData(res.data);
+          setCloudMenuInfo({
+            updatedAt: res.updatedAt,
+            messType: res.actualMessType,
+            isFallback: res.isFallback
+          });
+          setSyncStatus({ 
+            isSyncing: false, 
+            syncStatus: 'success',
+            lastSyncedAt: new Date().toISOString()
+          });
+        } else {
+          setSyncStatus({ isSyncing: false, syncStatus: 'idle' });
+        }
+      } catch (err) {
+        console.error("Sync Error:", err);
+        setSyncStatus({ isSyncing: false, syncStatus: 'error' });
+      }
+    };
+
+    if (!isLoading) syncCloudMenu();
+  }, [isAuthenticated, isLoading, hostel, messType, setMenuData, setSyncStatus, isSyncing, syncStatus, setCloudMenuInfo]);
+
+  // 🔔 HIGH-DENSITY REALTIME BROADCASTS
+  useEffect(() => {
+    let channel = null;
+
+    const initRealtime = async () => {
+      const { supabase } = await import('./lib/supabase');
+      
+      // Use a unique channel name to avoid subscription conflicts
+      channel = supabase.channel(`announcements-${Date.now()}`);
+
+      channel
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'announcements' },
+          (payload) => {
+            sendNotification(
+              null, 
+              notificationMode, 
+              `📢 ${payload.new.title}`, 
+              payload.new.content
+            );
+            window.dispatchEvent(new CustomEvent('new-announcement'));
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log("[Realtime] Connected to Global Announcements");
+          }
+        });
+    };
+
+    initRealtime();
+
+    return () => {
+      if (channel) {
+        import('./lib/supabase').then(({ supabase }) => {
+          supabase.removeChannel(channel);
+        });
+      }
+    };
+  }, [notificationMode]);
 
   // Apply Theme
   useEffect(() => {
@@ -275,10 +371,10 @@ export default function App() {
   };
 
   const navItems = [
-    { id: 'dashboard', label: 'Menu', icon: UtensilsCrossed },
+    { id: 'dashboard', label: 'Menu', icon: CookingPotIcon },
     { id: 'search', label: 'Search', icon: SearchIcon },
-    { id: 'upload', label: 'Upload', icon: DashboardIcon },
-    { id: 'settings', label: 'Settings', icon: SettingsIcon }
+    { id: 'upload', label: (role && role !== 'None') ? 'Admin' : 'Upload', icon: DashboardIcon },
+    { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
   const handleNavClick = (id) => {
@@ -419,7 +515,11 @@ export default function App() {
           ) : currentPage === 'search' ? (
             <Search />
           ) : currentPage === 'upload' ? (
-            <UploadMenu onComplete={() => setCurrentPage('dashboard')} />
+            (role && role !== 'None') ? (
+              <AdminDashboard />
+            ) : (
+              <UploadMenu onComplete={() => setCurrentPage('dashboard')} />
+            )
           ) : currentPage === 'settings' ? (
             <Settings />
           ) : null}

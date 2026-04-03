@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store/useStore';
 import { ACCENT_COLORS } from '../constants/colors';
 import { SendIcon } from '../components/ui/icons/SendIcon';
@@ -24,9 +24,31 @@ const MEALS = [
   { key: 'dinner', label: 'Dinner', time: '7:15 - 9:00 PM', icon: DinnerIcon, startMin: 1155, endMin: 1260 },
 ];
 
+import { Megaphone, X, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { getAnnouncements } from '../lib/supabase';
+
 export default function Dashboard() {
-  const { menuData, setMenuData, accentColor, theme } = useStore();
+  const { 
+    menuData, setMenuData, accentColor, theme, user,
+    cloudMenuInfo, syncStatus, isSyncing 
+  } = useStore();
   const [view, setView] = useState('day'); // 'day' | 'week' | 'month'
+  const [announcements, setAnnouncements] = useState([]);
+  const [showAnnouncements, setShowAnnouncements] = useState(true);
+  
+  const fetchAnnouncements = () => {
+    getAnnouncements().then(res => {
+      if (res.success) setAnnouncements(res.data);
+    });
+  };
+
+  useEffect(() => {
+    fetchAnnouncements();
+
+    // Listen for real-time announcement events from App.jsx
+    window.addEventListener('new-announcement', fetchAnnouncements);
+    return () => window.removeEventListener('new-announcement', fetchAnnouncements);
+  }, []);
   
   const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   const effectiveTheme = theme === 'system' ? systemTheme : theme;
@@ -248,6 +270,41 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold tracking-tight">Your Schedule</h1>
           <p className="text-muted-foreground">{format(selectedDate, 'EEEE, MMMM do, yyyy')}</p>
         </div>
+
+        {/* Global Announcements Section */}
+        <AnimatePresence>
+          {showAnnouncements && announcements.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="w-full lg:w-3/5 bg-orange-500/10 border border-orange-500/20 rounded-3xl p-4 overflow-hidden relative group"
+            >
+              <button 
+                onClick={() => setShowAnnouncements(false)}
+                className="absolute top-2 right-2 p-1.5 rounded-full hover:bg-orange-500/20 text-orange-500/60 hover:text-orange-500 transition-all z-20"
+              >
+                <X size={14} />
+              </button>
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-2xl bg-orange-500/20 flex items-center justify-center text-orange-500 shrink-0 shadow-lg">
+                  <Megaphone size={20} className="animate-bounce" />
+                </div>
+                <div className="min-w-0 pr-8">
+                   <h4 className="text-xs font-black uppercase tracking-widest text-orange-500 mb-1">Latest Broadcast</h4>
+                   <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-6">
+                     {announcements.map((ann, i) => (
+                       <div key={i} className="min-w-full snap-start">
+                         <p className="text-sm font-bold text-foreground mb-0.5 truncate">{ann.title}</p>
+                         <p className="text-xs text-muted-foreground line-clamp-1">{ann.content}</p>
+                       </div>
+                     ))}
+                   </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -277,6 +334,39 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Cloud Sync Status Banner */}
+      {cloudMenuInfo && cloudMenuInfo.updatedAt && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`mb-8 p-5 rounded-[2.5rem] border backdrop-blur-xl flex items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-700 ${
+            cloudMenuInfo.isFallback 
+              ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400' 
+              : 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400'
+          }`}
+        >
+          <div className={`p-3 rounded-2xl border flex items-center justify-center ${
+            cloudMenuInfo.isFallback ? 'bg-amber-500/20 border-amber-500/40 shadow-lg shadow-amber-500/10' : 'bg-green-500/20 border-green-500/40 shadow-lg shadow-green-500/10'
+          }`}>
+            {cloudMenuInfo.isFallback ? <AlertTriangle size={20} className="animate-pulse" /> : <CheckCircle2 size={20} />}
+          </div>
+          <div className="flex-grow">
+            <div className="flex items-center gap-2">
+               <p className="text-[10px] font-black uppercase tracking-[0.4em] leading-tight">
+                 {cloudMenuInfo.isFallback ? 'Intelligence Fallback Active' : 'Protocol Fully Synced'}
+               </p>
+               {isSyncing && <RefreshCw size={10} className="animate-spin opacity-40" />}
+            </div>
+            <p className="text-xs font-bold opacity-80 mt-1 tracking-tight">
+              {cloudMenuInfo.isFallback 
+                ? `Showing ${cloudMenuInfo.messType} menu. Your specific profile (Veg/Non-Veg) is not yet available in the vault.`
+                : `Verified ${cloudMenuInfo.messType} intelligence is active. Last integrity check: ${format(new Date(cloudMenuInfo.updatedAt), 'MMM d, h:mm a')}`
+              }
+            </p>
+          </div>
+        </motion.div>
+      )}
+
       {view === 'day' && (
         <>
           {/* Custom Day Selector */}
@@ -288,7 +378,7 @@ export default function Dashboard() {
               <ChevronLeftIcon size={20} className="w-5 h-5" />
             </button>
             
-            <div className="flex gap-2 mx-2 overflow-x-auto pb-2 scrollbar-none snap-x pointer-events-auto">
+            <div className="flex-grow grid grid-cols-7 gap-1 sm:gap-2">
               {weekDays.map(date => {
                 const isSelected = isSameDay(date, selectedDate);
                 const isDateTodayBool = isDateToday(date);
@@ -297,23 +387,24 @@ export default function Dashboard() {
                   <div 
                     key={date.toISOString()}
                     onClick={() => setSelectedDate(date)}
-                    className={`flex flex-col items-center justify-center min-w-[50px] sm:min-w-[72px] py-1.5 sm:py-3 cursor-pointer transition-all relative overflow-hidden ${
+                    className={`flex flex-col items-center justify-center py-2 sm:py-3 cursor-pointer transition-all duration-300 relative overflow-hidden group/day ${
                       isSelected
-                        ? "bg-secondary rounded-t-lg"
-                        : "bg-transparent hover:bg-secondary/30 rounded-lg"
+                        ? "bg-secondary/60 rounded-2xl shadow-inner border border-border/40"
+                        : "bg-transparent hover:bg-muted/10 rounded-2xl"
                     }`}
                   >
                     {isSelected && (
-                      <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary-foreground rounded-t-full" />
+                      <motion.div 
+                        layoutId="active-day-marker"
+                        className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full"
+                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                      />
                     )}
-                    <span className={`text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase ${isSelected ? 'text-foreground opacity-90' : 'text-muted-foreground'}`}>
-                      {format(date, 'MMM')}
+                    <span className={`text-[8px] sm:text-[10px] font-black tracking-widest uppercase mb-1 ${isSelected ? 'text-primary' : 'text-muted-foreground/60 group-hover/day:text-muted-foreground'}`}>
+                      {format(date, 'EEE').toUpperCase()}
                     </span>
-                    <span className={`text-lg sm:text-2xl font-bold my-0.5 sm:my-1 ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    <span className={`text-base sm:text-xl font-bold ${isSelected ? 'text-foreground' : 'text-muted-foreground group-hover/day:text-foreground'}`}>
                       {format(date, 'd')}
-                    </span>
-                    <span className={`text-[9px] sm:text-[10px] font-semibold tracking-wider ${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
-                      {isDateTodayBool ? 'TODAY' : format(date, 'EEE').toUpperCase()}
                     </span>
                   </div>
                 )

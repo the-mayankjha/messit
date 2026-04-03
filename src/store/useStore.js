@@ -43,8 +43,19 @@ export const useStore = create(
       // Real-time UI State (Un-persistent)
       isNotificationPending: false,
       isDrawerOpen: false,
+      isSyncing: false,
+      syncStatus: 'idle', // 'idle' | 'syncing' | 'success' | 'error'
+      lastSyncedAt: null,
+      cloudMenuInfo: {
+        updatedAt: null,
+        messType: null,
+        isFallback: false
+      },
+
       setNotificationPending: (isNotificationPending) => set({ isNotificationPending }),
       setDrawerOpen: (isDrawerOpen) => set({ isDrawerOpen }),
+      setSyncStatus: (status) => set(status),
+      setCloudMenuInfo: (cloudMenuInfo) => set({ cloudMenuInfo }),
 
       // Notifications History (Persistent)
       notifications: [],
