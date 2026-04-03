@@ -6,8 +6,9 @@ import {
   ArrowRight, ArrowLeft, Crown, Check,
   RefreshCw, Building2, Utensils, Hash,
   Star, Sparkles, MapPin, User, ChevronRight,
-  ShieldCheck
+  ShieldCheck, Lock
 } from 'lucide-react';
+import { Input } from '../components/ui/Input';
 import { GithubIcon } from '../components/ui/icons/GithubIcon';
 import { GoogleIcon } from '../components/ui/icons/GoogleIcon';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -247,33 +248,25 @@ export default function Onboarding() {
 
                     {/* Email & Password Input Section */}
                     <div className="space-y-6">
-                      <div className="space-y-3">
-                        <label className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/60 ml-1 uppercase">Email Address</label>
-                        <div className="relative group">
-                          <Utensils size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/30 group-focus-within:text-primary/60 transition-colors" />
-                          <input 
-                            type="email"
-                            placeholder="hello@messit.app"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-secondary/30 border border-border/50 h-16 rounded-2xl pl-14 pr-6 text-foreground font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground/30 transition-all shadow-inner"
-                          />
-                        </div>
-                      </div>
+                      <Input
+                        label="Email Address"
+                        type="email"
+                        icon={Utensils}
+                        placeholder="hello@messit.app"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="h-16"
+                      />
 
-                      <div className="space-y-3">
-                        <label className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/60 ml-1 uppercase">Password</label>
-                        <div className="relative group">
-                          <ShieldCheck size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/30 group-focus-within:text-primary/60 transition-colors" />
-                          <input 
-                            type="password"
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-secondary/30 border border-border/50 h-16 rounded-2xl pl-14 pr-6 text-foreground font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground/30 transition-all shadow-inner"
-                          />
-                        </div>
-                      </div>
+                      <Input
+                        label="Password"
+                        type="password"
+                        icon={ShieldCheck}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-16"
+                      />
                     </div>
 
                     <div className="pt-4 space-y-4 text-center">
@@ -428,19 +421,14 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              {/* Room Number */}
-              <div className="space-y-3">
-                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 ml-1">Room Number</label>
-                 <div className="relative group">
-                    <Hash className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/20 group-focus-within:text-primary/60 transition-colors" />
-                    <input 
-                      placeholder="e.g. 402"
-                      value={profileData.roomNumber}
-                      onChange={(e) => setProfileData({ ...profileData, roomNumber: e.target.value })}
-                      className="flex w-full rounded-2xl border border-border/40 bg-secondary/30 px-5 py-4 text-sm transition-all shadow-inner text-foreground file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/20 disabled:cursor-not-allowed disabled:opacity-50 selection:bg-primary/30 selection:text-foreground [&:-webkit-autofill]:shadow-[0_0_0_1000px_transparent_inset] [&:-webkit-autofill]:text-fill-foreground pl-14 h-16"
-                    />
-                 </div>
-              </div>
+              <Input
+                label="Room Number"
+                placeholder="e.g. 402"
+                icon={Hash}
+                value={profileData.roomNumber}
+                onChange={(e) => setProfileData({ ...profileData, roomNumber: e.target.value })}
+                className="h-16"
+              />
 
               <div className="pt-8 flex flex-col gap-4">
                 <Button 
