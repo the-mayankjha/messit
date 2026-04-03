@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
 import { useStore } from './store/useStore';
+import { ACCENT_COLORS } from './constants/colors';
 import Dashboard from './pages/Dashboard';
 import UploadMenu from './pages/UploadMenu';
 import Settings from './pages/Settings';
@@ -18,6 +19,7 @@ import NotificationDrawer from './components/NotificationDrawer';
 export default function App() {
   const { 
     theme, 
+    accentColor,
     menuData, 
     notificationMode, 
     isNotificationPending, 
@@ -40,6 +42,21 @@ export default function App() {
   // Page State
   const [currentPage, setCurrentPage] = useState(menuData ? 'dashboard' : 'upload');
   const [isSyncingProfile, setIsSyncingProfile] = useState(false);
+
+  // Theme & Accent Logic
+  const [systemTheme, setSystemTheme] = useState(
+    typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e) => setSystemTheme(e.matches ? 'dark' : 'light');
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  const effectiveTheme = theme === 'system' ? systemTheme : theme;
+  const accentHex = ACCENT_COLORS[accentColor]?.[effectiveTheme] || ACCENT_COLORS.Blue[effectiveTheme];
   
   // Refs for animations
   const bellRef = useRef(null);
@@ -148,8 +165,13 @@ export default function App() {
   useEffect(() => {
     if (isNotificationPending && bellRef.current) {
       bellRef.current.shake();
+      // Reset after animation duration to allow re-triggering for next notification
+      const timer = setTimeout(() => {
+        setNotificationPending(false);
+      }, 2000);
+      return () => clearTimeout(timer);
     }
-  }, [isNotificationPending]);
+  }, [isNotificationPending, setNotificationPending]);
 
   // 2. CONDITIONAL RETURNS (After all hooks)
 
@@ -158,9 +180,12 @@ export default function App() {
   if (isLoading || isSyncingProfile) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 space-y-6 text-center">
-        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+        <div 
+          className="w-16 h-16 border-4 rounded-full animate-spin" 
+          style={{ borderTopColor: accentHex, borderLeftColor: `${accentHex}20`, borderRightColor: `${accentHex}20`, borderBottomColor: `${accentHex}20` }}
+        />
         <div>
-          <p className="text-xs font-bold tracking-widest uppercase text-primary animate-pulse">
+          <p className="text-xs font-bold tracking-widest uppercase animate-pulse" style={{ color: accentHex }}>
             {isLoading ? 'Initializing Identity...' : 'Syncing Profile...'}
           </p>
           <p className="text-[10px] text-muted-foreground mt-2">
@@ -175,24 +200,29 @@ export default function App() {
     return <Onboarding />;
   }
 
-  const BellWithBadge = ({ isMobile = false }) => (
-    <div className="relative">
-      <BellRingIcon 
-        ref={bellRef} 
-        className={`${isMobile ? '' : 'text-muted-foreground/60 hover:text-foreground'} transition-colors cursor-pointer p-2 hover:bg-muted/50 rounded-xl`}
-        size={22}
-        strokeWidth={1.8}
-        onClick={() => setDrawerOpen(true)}
-      />
-      {unreadCount > 0 && (
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          className="absolute top-2 right-2 w-2.5 h-2.5 bg-primary rounded-full border-2 border-background shadow-sm pointer-events-none"
+  const BellWithBadge = ({ isMobile = false }) => {
+    const unreadCount = notifications.filter(n => !n.read).length;
+
+    return (
+      <div className="relative">
+        <BellRingIcon 
+          ref={bellRef} 
+          className={`${isMobile ? '' : 'text-muted-foreground/60 hover:text-foreground'} transition-colors cursor-pointer p-2 hover:bg-muted/50 rounded-xl`}
+          size={22}
+          strokeWidth={1.8}
+          onClick={() => setDrawerOpen(true)}
         />
-      )}
-    </div>
-  );
+        {unreadCount > 0 && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full border-2 border-background shadow-sm pointer-events-none"
+            style={{ backgroundColor: accentHex }}
+          />
+        )}
+      </div>
+    );
+  };
 
   const navItems = [
     { id: 'dashboard', label: 'Menu', icon: UtensilsCrossed },
@@ -305,11 +335,8 @@ export default function App() {
             <button
               key={item.id}
               onClick={() => handleNavClick(item.id)}
-              className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl transition-all duration-300 relative ${
-                isActive 
-                  ? 'bg-primary/10 text-primary-foreground' 
-                  : 'text-muted-foreground/60'
-              }`}
+              className="flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl transition-all duration-300 relative"
+              style={{ color: isActive ? accentHex : undefined }}
             >
               {item.id === 'settings' ? (
                 <SettingsIcon ref={isActive ? mobileSettingsIconRef : null} size={22} strokeWidth={isActive ? 2.2 : 1.8} />
@@ -324,7 +351,8 @@ export default function App() {
               {isActive && (
                 <motion.div
                   layoutId="active-pill-mobile"
-                  className="absolute inset-0 bg-primary/5 rounded-2xl -z-10"
+                  className="absolute inset-0 rounded-2xl -z-10"
+                  style={{ backgroundColor: `${accentHex}10` }}
                   transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                 />
               )}

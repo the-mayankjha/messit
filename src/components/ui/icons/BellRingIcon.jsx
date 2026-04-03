@@ -44,11 +44,11 @@ const BellRingIcon = forwardRef(
         transition: { duration: 1.2 * duration, ease: "easeInOut", repeat: 0 },
       },
       shake: {
-        rotate: [0, -12, 12, -12, 12, -8, 8, -4, 4, 0],
-        scale: [1, 1.1, 0.95, 1.05, 1],
+        rotate: [0, -15, 15, -15, 15, -12, 12, -8, 8, -4, 4, 0],
+        scale: [1, 1.05, 0.95, 1.02, 1],
         transition: { 
-          duration: 0.8,
-          times: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1],
+          duration: 1.2,
+          times: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1],
           ease: "easeInOut"
         }
       }
@@ -61,21 +61,21 @@ const BellRingIcon = forwardRef(
         transition: { duration: 1.2 * duration, ease: "easeInOut", repeat: 0 },
       },
       shake: {
-        x: [0, -3, 3, -3, 3, 0],
-        transition: { duration: 0.8, ease: "easeInOut" }
+        x: [0, -4, 4, -4, 4, -3, 3, 0],
+        transition: { duration: 1.2, ease: "easeInOut" }
       }
     };
 
     const waveVariants = {
-      normal: { opacity: 0 },
+      normal: { opacity: 0, scale: 1 },
       animate: {
         opacity: [0, 0.6, 0.2, 0.6, 0],
         transition: { duration: 1.2 * duration, repeat: 0, ease: "easeInOut" },
       },
       shake: {
-        opacity: [0, 1, 0, 1, 0],
-        scale: [1, 1.3, 1, 1.3, 1],
-        transition: { duration: 0.8 }
+        opacity: [0, 1, 0, 1, 0, 1, 0],
+        scale: [1, 1.2, 1, 1.4, 1, 1.2, 1],
+        transition: { duration: 1.2, ease: "easeInOut" }
       }
     };
 

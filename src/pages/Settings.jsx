@@ -14,28 +14,25 @@ import { GithubIcon } from '../components/ui/icons/GithubIcon';
 import { BellRingIcon } from '../components/ui/icons/BellRingIcon';
 import { useAuth0 } from '@auth0/auth0-react';
 import { requestNotificationPermission, sendNotification } from '../utils/notifier';
-
-const ACCENT_COLORS = {
-  Blue: { light: '#1e66f5', dark: '#8aadf4' },
-  Green: { light: '#40a02b', dark: '#a6da95' },
-  Orange: { light: '#fe640b', dark: '#f5a97f' },
-  Yellow: { light: '#df8e1d', dark: '#eed49f' },
-  Purple: { light: '#8839ef', dark: '#c6a0f6' },
-  Red: { light: '#d20f39', dark: '#ed8796' },
-  Pink: { light: '#ea76cb', dark: '#f5bde6' },
-};
+import { ACCENT_COLORS } from '../constants/colors';
 
 export default function Settings() {
   const { logout, user: auth0User, isAuthenticated } = useAuth0();
   const { 
-    theme, setTheme, 
-    accentColor, setAccentColor,
+    user, 
+    role, 
+    accentColor, 
+    setAccentColor,
+    theme, setTheme,
     notificationMode, setNotificationMode,
-    user, setUser,
     hostel, setProfile,
-    roomNumber, messType, gender, role,
+    roomNumber, messType,
     setIsOnboarded, setMenuData
   } = useStore();
+
+  const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const effectiveTheme = theme === 'system' ? systemTheme : theme;
+  const accentHex = ACCENT_COLORS[accentColor]?.[effectiveTheme] || ACCENT_COLORS.Blue[effectiveTheme];
 
   // Local state for editing
   const [localHostel, setLocalHostel] = useState(hostel);
@@ -90,7 +87,7 @@ export default function Settings() {
   };
 
   const handleLogout = () => {
-    setUser(null);
+    // setUser(null); // Removed as setUser is not in the new destructuring
     setIsOnboarded(false);
     logout({ logoutParams: { returnTo: window.location.origin } });
   };
@@ -229,18 +226,27 @@ export default function Settings() {
 
               {/* Role Display: Read-Only */}
               <div className="pt-4 border-t border-border/40">
-                 <div className="flex items-center justify-between p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                 <div 
+                   className="flex items-center justify-between p-4 rounded-2xl border"
+                   style={{ backgroundColor: `${accentHex}08`, borderColor: `${accentHex}20` }}
+                 >
                    <div className="flex items-center gap-4">
-                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                     <div 
+                       className="w-10 h-10 rounded-full flex items-center justify-center"
+                       style={{ backgroundColor: `${accentHex}15`, color: accentHex }}
+                     >
                        <ShieldCheck size={20} />
                      </div>
                      <div>
                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Platform Role</p>
-                       <p className="font-bold text-primary">{role || 'None'}</p>
+                       <p className="font-bold underline decoration-dotted underline-offset-4" style={{ color: accentHex }}>{role || 'None'}</p>
                      </div>
                    </div>
-                   <div className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
-                     <p className="text-[8px] font-bold uppercase tracking-tighter text-primary">Locked</p>
+                   <div 
+                     className="px-3 py-1 rounded-full border"
+                     style={{ backgroundColor: `${accentHex}15`, borderColor: `${accentHex}30` }}
+                   >
+                     <p className="text-[8px] font-bold uppercase tracking-tighter" style={{ color: accentHex }}>Locked</p>
                    </div>
                  </div>
                  <p className="text-[10px] text-muted-foreground mt-3 italic text-center sm:text-left">Your role is set during onboarding and cannot be changed without administrator approval.</p>
@@ -278,8 +284,11 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-muted/20">
-                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-secondary/30">
+                   <div 
+                     className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                     style={{ backgroundColor: `${accentHex}15`, color: accentHex }}
+                   >
                      <User size={20} />
                    </div>
                    <div className="min-w-0">
@@ -287,8 +296,11 @@ export default function Settings() {
                      <p className="font-semibold truncate">{user?.name}</p>
                    </div>
                  </div>
-                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-muted/20">
-                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-secondary/30">
+                   <div 
+                     className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                     style={{ backgroundColor: `${accentHex}15`, color: accentHex }}
+                   >
                      <Mail size={20} />
                    </div>
                    <div className="min-w-0">
@@ -301,13 +313,13 @@ export default function Settings() {
               <div className="flex flex-col sm:flex-row items-center justify-between p-5 sm:p-6 rounded-3xl border border-dashed border-border/60 gap-4">
                  <div className="flex items-center gap-4 w-full sm:w-auto">
                   {loginProvider === 'Google' && (
-                    <div className="w-10 h-10 rounded-2xl bg-[#191919] border border-border/40 flex items-center justify-center shadow-inner">
+                    <div className="w-10 h-10 rounded-2xl bg-secondary/30 border border-border/40 flex items-center justify-center shadow-inner">
                       <GoogleIcon size={24} isAnimated={false} />
                     </div>
                   )}
                   {loginProvider === 'GitHub' && (
-                    <div className="w-10 h-10 rounded-2xl bg-[#191919] border border-border/40 flex items-center justify-center shadow-inner">
-                      <GithubIcon size={24} isAnimated={false} />
+                    <div className="w-10 h-10 rounded-2xl bg-secondary/30 border border-border/40 flex items-center justify-center shadow-inner">
+                      <GithubIcon size={24} />
                     </div>
                   )}
                   {loginProvider === 'Email' && (

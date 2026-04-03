@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import { useStore } from '../store/useStore';
+import { ACCENT_COLORS } from '../constants/colors';
 import { SendIcon } from '../components/ui/icons/SendIcon';
 import { toPng } from 'html-to-image';
 import { format, getDay, addDays, subDays, startOfWeek, endOfWeek, isSameDay, isToday as isDateToday, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths } from 'date-fns';
@@ -24,10 +25,13 @@ const MEALS = [
 ];
 
 export default function Dashboard() {
-  const menuData = useStore(state => state.menuData);
-  const setMenuData = useStore(state => state.setMenuData);
+  const { menuData, setMenuData, accentColor, theme } = useStore();
   const [view, setView] = useState('day'); // 'day' | 'week' | 'month'
   
+  const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const effectiveTheme = theme === 'system' ? systemTheme : theme;
+  const accentHex = ACCENT_COLORS[accentColor]?.[effectiveTheme] || ACCENT_COLORS.Blue[effectiveTheme];
+
   // Create state for the currently selected date, and the base week date
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [weekOffset, setWeekOffset] = useState(0); // 0 = current week, -1 = last week, etc.
@@ -112,8 +116,8 @@ export default function Dashboard() {
 
         if (cardRef.current) {
           const dataUrl = await toPng(cardRef.current, {
-            backgroundColor: '#111', // Match Notion Dark
-            style: { borderRadius: '0' }, // Capture clean edges
+            backgroundColor: effectiveTheme === 'dark' ? '#111111' : '#ffffff', // Elite Theme Sync
+            style: { borderRadius: '0' },
             cacheBust: true,
             filter: (node) => {
               const exclusionClasses = ['capture-exclude'];
@@ -160,24 +164,37 @@ export default function Dashboard() {
           </div>
         )}
         <Card className="h-full flex flex-col group">
-          <CardHeader className={`pb-3 border-b transition-colors ${meal.status === 'Ongoing' ? 'bg-primary/10 border-primary/20' : 'border-border/50 bg-muted/10 group-hover:bg-muted/20'}`}>
+          <CardHeader 
+            className={`pb-3 border-b transition-colors ${meal.status === 'Ongoing' ? 'border-primary/20' : 'border-border/50 group-hover:bg-muted/10'}`}
+            style={{ backgroundColor: meal.status === 'Ongoing' ? `${accentHex}15` : undefined }}
+          >
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className={`p-2.5 rounded-xl shadow-sm ${meal.status === 'Done' ? 'bg-muted text-muted-foreground' : 'bg-primary/30 text-primary-foreground'}`}>
+                <div 
+                  className={`p-2.5 rounded-xl shadow-sm ${meal.status === 'Done' ? 'bg-muted text-muted-foreground' : 'text-primary-foreground'}`}
+                  style={{ backgroundColor: meal.status !== 'Done' ? `${accentHex}40` : undefined }}
+                >
                   <MealIcon className="w-5 h-5" />
                 </div>
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     {meal.label}
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wider uppercase ${
-                      meal.status === 'Ongoing' ? 'bg-primary text-primary-foreground animate-pulse' :
-                      meal.status === 'Upcoming' ? 'bg-primary/20 text-primary-foreground' :
-                      'bg-muted text-muted-foreground'
-                    }`}>
+                    <span 
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wider uppercase ${
+                        meal.status === 'Ongoing' ? 'animate-pulse' : ''
+                      }`}
+                      style={{ 
+                        backgroundColor: meal.status === 'Ongoing' ? accentHex : meal.status === 'Upcoming' ? `${accentHex}30` : undefined,
+                        color: meal.status === 'Done' ? undefined : '#fff' 
+                      }}
+                    >
                       {meal.status}
                     </span>
                   </CardTitle>
-                  <p className={`text-xs mt-0.5 font-semibold tracking-wide ${meal.status === 'Done' ? 'text-muted-foreground' : 'text-primary-foreground'}`}>
+                  <p 
+                    className={`text-xs mt-0.5 font-semibold tracking-wide ${meal.status === 'Done' ? 'text-muted-foreground' : ''}`}
+                    style={{ color: meal.status !== 'Done' ? accentHex : undefined }}
+                  >
                     {meal.time}
                   </p>
                 </div>
@@ -195,14 +212,17 @@ export default function Dashboard() {
             {items && items.length > 0 ? (
               <ul className="space-y-3">
                 {items.map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
-                    <span className="leading-relaxed">{item}</span>
+                  <li key={idx} className="flex items-start gap-4">
+                    <span 
+                      className="w-1.5 h-1.5 rounded-full mt-2.5 flex-shrink-0 animate-in zoom-in-0 duration-300" 
+                      style={{ backgroundColor: accentHex }}
+                    />
+                    <span className="leading-relaxed font-medium">{item}</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground italic my-4">
+              <div className="h-full flex items-center justify-center text-muted-foreground italic my-8 opacity-40">
                 No menu found.
               </div>
             )}

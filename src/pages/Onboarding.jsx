@@ -140,17 +140,20 @@ export default function Onboarding() {
                   className="flex flex-col items-center py-12"
                 >
                   {/* Premium Brand Icon Container */}
-                  <div className="relative mb-12 animate-in zoom-in-50 duration-700">
-                    <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full scale-150" />
-                    <img 
-                      src="/icon.png" 
-                      className="w-28 h-28 sm:w-32 sm:h-32 relative z-10 filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)] select-none object-contain" 
-                      alt="Messit Icon" 
-                    />
+                  <div className="relative mb-12 sm:mb-16">
+                    <div className="absolute -inset-8 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+                    <div className="relative w-28 h-28 sm:w-32 sm:h-32 bg-secondary/30 rounded-[2rem] border border-border/50 flex items-center justify-center overflow-hidden shadow-2xl">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
+                      <img 
+                        src="/icon.png" 
+                        alt="Messit Logo" 
+                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-xl" 
+                      />
+                    </div>
                   </div>
 
                   <div className="text-center mb-16 space-y-4 px-4">
-                    <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white">Welcome to Messit</h1>
+                    <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-foreground">Welcome to Messit</h1>
                     <p className="text-muted-foreground/60 text-sm sm:text-base leading-relaxed max-w-[320px] mx-auto font-medium">
                       Your college mess menu, digitized and delivered exactly when you need it.
                     </p>
@@ -159,25 +162,24 @@ export default function Onboarding() {
                   <div className="w-full space-y-4 px-6">
                     <button 
                       onClick={() => setAuthMode('auth')}
-                      className="w-full h-16 rounded-2xl bg-[#191919] border border-[#333333] hover:border-[#444444] transition-all duration-300 group relative overflow-hidden"
+                      className="w-full h-16 rounded-2xl bg-foreground border border-border shadow-lg hover:opacity-90 transition-all duration-300 group relative overflow-hidden"
                     >
-                      <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                       <div className="flex items-center justify-center gap-2">
-                        <span className="text-sm font-bold text-white tracking-wide">Create an Account</span>
-                        <ChevronRight size={18} className="text-white/40 group-hover:translate-x-1 transition-transform" />
+                        <span className="text-sm font-bold text-background tracking-wide">Create an Account</span>
+                        <ChevronRight size={18} className="text-background/40 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </button>
 
                     <div className="grid grid-cols-2 gap-4">
                       <button 
                         onClick={() => setAuthMode('auth')}
-                        className="h-14 rounded-2xl bg-transparent border border-border/40 hover:bg-white/5 text-white/80 font-bold text-xs tracking-wider transition-all"
+                        className="h-14 rounded-2xl bg-secondary/30 border border-border/40 hover:bg-secondary/50 text-foreground font-bold text-xs tracking-wider transition-all"
                       >
                         Log In
                       </button>
                       <button 
                         onClick={handleGuestSkip}
-                        className="h-14 rounded-2xl bg-transparent border border-border/40 hover:bg-white/5 text-white/80 font-bold text-xs tracking-wider transition-all"
+                        className="h-14 rounded-2xl bg-secondary/30 border border-border/40 hover:bg-secondary/50 text-foreground font-bold text-xs tracking-wider transition-all"
                       >
                         Skip for Now
                       </button>
@@ -202,11 +204,11 @@ export default function Onboarding() {
                   <div className="text-center mb-16 px-4 relative">
                     <button 
                       onClick={() => setAuthMode('welcome')}
-                      className="absolute left-0 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-secondary/30 text-white/40 hover:text-white transition-colors"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-secondary/30 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <ArrowLeft size={20} />
                     </button>
-                    <h1 className="text-4xl font-black tracking-tight mb-2 text-white">Messit</h1>
+                    <h1 className="text-4xl font-black tracking-tight mb-2 text-foreground">Messit</h1>
                     <p className="text-muted-foreground/60 text-sm font-medium">Your elite dining companion.</p>
                   </div>
 
@@ -220,7 +222,7 @@ export default function Onboarding() {
                         className="flex items-center justify-center gap-3 bg-secondary/30 hover:bg-secondary/50 border border-border/50 py-4 rounded-xl transition-all active:scale-95 group"
                       >
                         <GoogleIcon ref={googleIconRef} />
-                        <span className="text-[10px] font-black tracking-[0.2em] text-white/80">GOOGLE</span>
+                        <span className="text-[10px] font-black tracking-[0.2em] text-foreground/80">GOOGLE</span>
                       </button>
                       <button 
                         onClick={() => handleSocialAuth('github')}
@@ -229,7 +231,7 @@ export default function Onboarding() {
                         className="flex items-center justify-center gap-3 bg-secondary/30 hover:bg-secondary/50 border border-border/50 py-4 rounded-xl transition-all active:scale-95 group"
                       >
                         <GithubIcon ref={githubIconRef} size={18} />
-                        <span className="text-[10px] font-black tracking-[0.2em] text-white/80">GITHUB</span>
+                        <span className="text-[10px] font-black tracking-[0.2em] text-foreground/80">GITHUB</span>
                       </button>
                     </div>
 
@@ -254,7 +256,7 @@ export default function Onboarding() {
                             placeholder="hello@messit.app"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-[#202020] border border-border/50 h-16 rounded-2xl pl-14 pr-6 text-white font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground/30 transition-all shadow-inner"
+                            className="w-full bg-secondary/30 border border-border/50 h-16 rounded-2xl pl-14 pr-6 text-foreground font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground/30 transition-all shadow-inner"
                           />
                         </div>
                       </div>
@@ -268,22 +270,22 @@ export default function Onboarding() {
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-[#202020] border border-border/50 h-16 rounded-2xl pl-14 pr-6 text-white font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground/30 transition-all shadow-inner"
+                            className="w-full bg-secondary/30 border border-border/50 h-16 rounded-2xl pl-14 pr-6 text-foreground font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground/30 transition-all shadow-inner"
                           />
                         </div>
                       </div>
                     </div>
 
                     <div className="pt-4 space-y-4 text-center">
-                      <Button 
+                      <button 
                         onClick={() => setStep(1)}
-                        className="w-full h-16 rounded-2xl bg-white hover:bg-white/95 text-background font-black text-xs tracking-[0.2em] shadow-xl transition-all active:scale-95"
+                        className="w-full h-16 rounded-2xl bg-foreground text-background font-black text-xs tracking-[0.2em] shadow-xl hover:opacity-90 transition-all active:scale-95"
                       >
                         CONTINUE
-                      </Button>
+                      </button>
                       <button 
                         onClick={handleGuestSkip}
-                        className="text-muted-foreground/40 hover:text-white text-[9px] font-black uppercase tracking-[0.3em] transition-colors py-2"
+                        className="text-muted-foreground/40 hover:text-foreground text-[9px] font-black uppercase tracking-[0.3em] transition-colors py-2"
                       >
                         Skip for now
                       </button>
@@ -435,7 +437,7 @@ export default function Onboarding() {
                       placeholder="e.g. 402"
                       value={profileData.roomNumber}
                       onChange={(e) => setProfileData({ ...profileData, roomNumber: e.target.value })}
-                      className="w-full bg-[#202020] border border-border/50 h-16 rounded-2xl pl-14 pr-6 text-white font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground/30 transition-all shadow-inner"
+                      className="flex w-full rounded-2xl border border-border/40 bg-secondary/30 px-5 py-4 text-sm transition-all shadow-inner text-foreground file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/20 disabled:cursor-not-allowed disabled:opacity-50 selection:bg-primary/30 selection:text-foreground [&:-webkit-autofill]:shadow-[0_0_0_1000px_transparent_inset] [&:-webkit-autofill]:text-fill-foreground pl-14 h-16"
                     />
                  </div>
               </div>

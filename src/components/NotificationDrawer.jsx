@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store/useStore';
+import { ACCENT_COLORS } from '../constants/colors';
 import { X, BellOff, CheckCheck } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useRef, useEffect } from 'react';
@@ -12,8 +13,14 @@ export default function NotificationDrawer() {
     notifications, 
     removeNotification, 
     clearNotifications,
-    markAllAsRead
+    markAllAsRead,
+    accentColor,
+    theme
   } = useStore();
+
+  const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const effectiveTheme = theme === 'system' ? systemTheme : theme;
+  const accentHex = ACCENT_COLORS[accentColor]?.[effectiveTheme] || ACCENT_COLORS.Blue[effectiveTheme];
 
   const bellRef = useRef(null);
 
@@ -79,6 +86,7 @@ export default function NotificationDrawer() {
                     <NotificationItem 
                       key={notif.id} 
                       notification={notif} 
+                      accentHex={accentHex}
                       onRemove={() => removeNotification(notif.id)} 
                     />
                   ))
@@ -118,7 +126,7 @@ export default function NotificationDrawer() {
   );
 }
 
-function NotificationItem({ notification, onRemove }) {
+function NotificationItem({ notification, onRemove, accentHex }) {
   return (
     <motion.div
       layout
@@ -143,8 +151,12 @@ function NotificationItem({ notification, onRemove }) {
         className={`p-4 rounded-2xl border transition-all duration-300 bg-card shadow-sm ${
           notification.read 
             ? 'opacity-60 border-border/50' 
-            : 'border-primary/20 bg-primary/[0.02] shadow-primary/5'
+            : 'border-border/50 bg-card'
         }`}
+        style={{ 
+          borderColor: !notification.read ? `${accentHex}40` : undefined,
+          backgroundColor: !notification.read ? `${accentHex}05` : undefined 
+        }}
       >
         <div className="flex items-start gap-4">
           <div className="relative flex-shrink-0 mt-1">
@@ -152,11 +164,13 @@ function NotificationItem({ notification, onRemove }) {
               size={20} 
               strokeWidth={2} 
               className={notification.read ? "text-muted-foreground/40" : "text-foreground/80"} 
+              style={{ color: !notification.read ? accentHex : undefined }}
             />
             {!notification.read && (
               <motion.div
                 layoutId={`dot-${notification.id}`}
-                className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full border border-card shadow-sm"
+                className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-card shadow-sm"
+                style={{ backgroundColor: accentHex }}
               />
             )}
           </div>
@@ -167,7 +181,7 @@ function NotificationItem({ notification, onRemove }) {
               <span className="text-[10px] text-muted-foreground/40 font-medium uppercase tracking-wider">
                 {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
               </span>
-              <CheckCheck size={12} className="text-primary-foreground" />
+              <CheckCheck size={12} style={{ color: accentHex }} className="opacity-60" />
             </div>
           </div>
         </div>

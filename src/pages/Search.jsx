@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useStore } from '../store/useStore';
+import { ACCENT_COLORS } from '../constants/colors';
 import { SearchIcon } from '../components/ui/icons/SearchIcon';
 import { Input } from '../components/ui/Input';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
@@ -13,9 +14,13 @@ import { DinnerIcon } from '../components/ui/icons/DinnerIcon';
 import { CookingPotIcon } from '../components/ui/icons/CookingPotIcon';
 
 export default function Search() {
-  const { menuData } = useStore();
+  const { menuData, accentColor, theme } = useStore();
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+
+  const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const effectiveTheme = theme === 'system' ? systemTheme : theme;
+  const accentHex = ACCENT_COLORS[accentColor]?.[effectiveTheme] || ACCENT_COLORS.Blue[effectiveTheme];
 
   // Extract all unique dishes from the entire month
   const allDishes = useMemo(() => {
@@ -160,12 +165,12 @@ export default function Search() {
                       setQuery(suggestion);
                       setIsFocused(false);
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm sm:text-base rounded-2xl hover:bg-primary/10 transition-colors group/item"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm sm:text-base rounded-2xl hover:bg-muted/40 transition-colors group/item"
                   >
-                    <SearchIcon size={14} className="text-muted-foreground group-hover/item:text-primary transition-colors" />
+                    <SearchIcon size={14} className="text-muted-foreground group-hover/item:text-foreground transition-colors" />
                     <span className="flex-1 truncate font-medium">{suggestion}</span>
                     <div className="flex items-center gap-1.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                      <span className="text-[10px] uppercase font-bold tracking-widest text-primary">Select</span>
+                      <span className="text-[10px] uppercase font-bold tracking-widest" style={{ color: accentHex }}>Select</span>
                     </div>
                   </button>
                 ))}
@@ -195,12 +200,12 @@ export default function Search() {
                 >
                   {[...Array(3)].map((_, i) => (
                     <div key={i} className="flex gap-12 shrink-0">
-                      <CalendarDaysIcon size={28} className="text-primary/60 shrink-0" />
-                      <CoffeeIcon size={28} className="text-primary/60 shrink-0" />
-                      <LunchIcon size={28} className="text-primary/60 shrink-0" />
-                      <SnacksIcon size={28} className="text-primary/60 shrink-0" />
-                      <DinnerIcon size={28} className="text-primary/60 shrink-0" />
-                      <CookingPotIcon size={28} className="text-primary/60 shrink-0" />
+                      <CalendarDaysIcon size={28} className="text-foreground/30 shrink-0" />
+                      <CoffeeIcon size={28} className="text-foreground/30 shrink-0" />
+                      <LunchIcon size={28} className="text-foreground/30 shrink-0" />
+                      <SnacksIcon size={28} className="text-foreground/30 shrink-0" />
+                      <DinnerIcon size={28} className="text-foreground/30 shrink-0" />
+                      <CookingPotIcon size={28} className="text-foreground/30 shrink-0" />
                     </div>
                   ))}
                 </motion.div>
@@ -220,7 +225,10 @@ export default function Search() {
                 <Card className="overflow-hidden border-border/40 hover:border-primary/40 bg-card/20 hover:bg-card/40 transition-all duration-300 backdrop-blur-sm">
                   <CardHeader className="py-3 sm:py-4 border-b border-border/40 flex flex-row items-center justify-between gap-2">
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-sm sm:text-base">
+                      <div 
+                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center font-bold text-sm sm:text-base"
+                        style={{ backgroundColor: `${accentHex}15`, color: accentHex }}
+                      >
                         {result.date}
                       </div>
                       <div>
@@ -228,7 +236,10 @@ export default function Search() {
                         <p className="text-[9px] sm:text-[10px] uppercase font-bold text-muted-foreground tracking-widest">{result.dayInfo.full}</p>
                       </div>
                     </div>
-                    <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest px-2 sm:px-3 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 whitespace-nowrap">
+                    <span 
+                      className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest px-2 sm:px-3 py-1 rounded-full border whitespace-nowrap"
+                      style={{ backgroundColor: `${accentHex}15`, color: accentHex, borderColor: `${accentHex}30` }}
+                    >
                       {result.matchType} match
                     </span>
                   </CardHeader>
@@ -245,12 +256,15 @@ export default function Search() {
                         return (
                           <div 
                             key={mealType} 
-                            className={`p-4 rounded-2xl border transition-all ${
-                              isHit ? 'bg-primary/5 border-primary/30' : 'bg-muted/10 border-border/20 opacity-60'
-                            }`}
+                            className="p-4 rounded-2xl border transition-all"
+                            style={{ 
+                              backgroundColor: isHit ? `${accentHex}08` : undefined, 
+                              borderColor: isHit ? `${accentHex}30` : 'rgba(var(--border), 0.2)',
+                              opacity: isHit ? 1 : 0.6 
+                            }}
                           >
                             <div className="flex items-center gap-2 mb-2">
-                               <Icon size={14} className={isHit ? "text-primary" : "text-muted-foreground"} />
+                               <Icon size={14} style={{ color: isHit ? accentHex : undefined }} className={!isHit ? "text-muted-foreground" : ""} />
                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{mealType}</span>
                             </div>
                             <ul className="space-y-1">
