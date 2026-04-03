@@ -23,6 +23,7 @@ import { DinnerIcon } from './components/ui/icons/DinnerIcon';
 import { CookingPotIcon } from './components/ui/icons/CookingPotIcon';
 import { CalendarDaysIcon } from './components/ui/icons/CalendarDaysIcon';
 import { getMessMenu } from './lib/supabase';
+import { CloudUploadIcon } from './components/ui/icons/CloudUploadIcon';
 
 export default function App() {
   const { 
@@ -151,17 +152,37 @@ export default function App() {
         const res = await getMessMenu(hostel, messType);
         
         if (res.success && res.data) {
-          setMenuData(res.data);
-          setCloudMenuInfo({
+          const syncMeta = {
             updatedAt: res.updatedAt,
             messType: res.actualMessType,
             isFallback: res.isFallback
-          });
+          };
+          
+          setMenuData(res.data);
+          setCloudMenuInfo(syncMeta);
+          
           setSyncStatus({ 
             isSyncing: false, 
             syncStatus: 'success',
             lastSyncedAt: new Date().toISOString()
           });
+
+          // 🛡️ SYNC INTELLIGENCE: Notify in the Manager instead of Dashboard
+          const timeStr = new Date(res.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const dateStr = new Date(res.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' });
+          
+          const title = res.isFallback ? 'Intelligence Fallback Active ⚠️' : 'Protocol Fully Synced ✅';
+          const body = res.isFallback 
+            ? `Showing ${res.actualMessType} menu. Your specific profile is not yet available in the vault.`
+            : `Verified ${res.actualMessType} intelligence is active. Last integrity check: ${dateStr}, ${timeStr}`;
+          
+          const state = useStore.getState();
+          // Avoid duplicate sync notifications in the same session/load
+          const lastNotif = state.notifications[0];
+          if (!lastNotif || lastNotif.body !== body) {
+            state.addNotification(title, body);
+            state.setNotificationPending(true);
+          }
         } else {
           setSyncStatus({ isSyncing: false, syncStatus: 'idle' });
         }
@@ -180,7 +201,25 @@ export default function App() {
     let requestChannel = null;
 
     const setupRealtime = async () => {
-      const { supabase } = await import('./lib/supabase');
+      const { supabase, getAnnouncements } = await import('./lib/supabase');
+      
+      // 0. Sync Historical Announcements (Ensuring they are in the Manager)
+      try {
+        const histRes = await getAnnouncements();
+        if (histRes.success && histRes.data) {
+          const state = useStore.getState();
+          const existingTitles = state.notifications.map(n => n.title);
+          
+          histRes.data.reverse().forEach(ann => {
+            const title = `📢 ${ann.title}`;
+            if (!existingTitles.includes(title)) {
+              state.addNotification(title, ann.content);
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Historical Sync Error:", e);
+      }
       
       // 1. Global Announcements (For Everyone)
       announcementChannel = supabase.channel(`announcements-${Date.now()}`);
@@ -189,7 +228,12 @@ export default function App() {
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'announcements' },
           (payload) => {
-            sendNotification(null, notificationMode, `📢 ${payload.new.title}`, payload.new.content);
+            const title = `📢 ${payload.new.title}`;
+            const content = payload.new.content;
+            
+            // This now handles BOTH the PWA alert and the In-App Manager sync
+            sendNotification(null, notificationMode, title, content);
+            
             window.dispatchEvent(new CustomEvent('new-announcement'));
           }
         )
@@ -384,7 +428,7 @@ export default function App() {
   const navItems = [
     { id: 'dashboard', label: 'Menu', icon: CookingPotIcon },
     { id: 'search', label: 'Search', icon: SearchIcon },
-    { id: 'upload', label: (role && role !== 'None') ? 'Admin' : 'Upload', icon: DashboardIcon },
+    { id: 'upload', label: (role && role !== 'None') ? 'Admin' : 'Upload', icon: (role && role !== 'None') ? DashboardIcon : CloudUploadIcon },
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
@@ -447,7 +491,11 @@ export default function App() {
                     {item.id === 'settings' ? (
                       <SettingsIcon ref={settingsIconRef} size={19} strokeWidth={1.8} />
                     ) : item.id === 'upload' ? (
-                      <DashboardIcon ref={uploadIconRef} size={19} strokeWidth={1.8} />
+                      (role && role !== 'None') ? (
+                        <DashboardIcon ref={uploadIconRef} size={19} strokeWidth={1.8} />
+                      ) : (
+                        <CloudUploadIcon ref={uploadIconRef} size={19} strokeWidth={1.8} />
+                      )
                     ) : item.id === 'search' ? (
                       <SearchIcon ref={searchIconRef} size={19} strokeWidth={1.8} />
                     ) : (
@@ -498,11 +546,15 @@ export default function App() {
               {item.id === 'settings' ? (
                 <SettingsIcon ref={isActive ? mobileSettingsIconRef : null} size={22} strokeWidth={isActive ? 2.2 : 1.8} />
               ) : item.id === 'upload' ? (
-                <DashboardIcon ref={isActive ? mobileUploadIconRef : null} size={22} strokeWidth={isActive ? 2.2 : 1.8} />
+                (role && role !== 'None') ? (
+                  <DashboardIcon ref={isActive ? mobileUploadIconRef : null} size={22} strokeWidth={isActive ? 2.2 : 1.8} />
+                ) : (
+                  <CloudUploadIcon ref={isActive ? mobileUploadIconRef : null} size={22} strokeWidth={isActive ? 2.2 : 1.8} />
+                )
               ) : item.id === 'search' ? (
                 <SearchIcon ref={isActive ? mobileSearchIconRef : null} size={22} strokeWidth={isActive ? 2.2 : 1.8} />
               ) : (
-                <Icon className="w-5 h-5" size={22} strokeWidth={isActive ? 2.2 : 1.8} />
+                <Icon size={22} strokeWidth={isActive ? 2.2 : 1.8} />
               )}
               <span className="text-[10px] font-bold uppercase tracking-widest">{item.label}</span>
               {isActive && (

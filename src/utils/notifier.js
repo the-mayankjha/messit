@@ -6,63 +6,56 @@ export const sendNotification = (mealName, mode, customTitle = null, customBody 
     return;
   }
 
-  if (Notification.permission === "granted") {
-    let title = customTitle, body = customBody;
-    const icon = "/icon.png";
+  let title = customTitle, body = customBody;
+  const icon = "/icon.png";
 
-    if (!title || !body) {
-      if (mode === 'stud') {
-        title = `Yo Bro, Fuel Up! 🥩`;
-        body = `Grab your protein! ${mealName} is being served at the mess. Let's get those gains.`;
-      } else if (mode === 'princess') {
-        title = `Your Meal Awaits, Princess ✨`;
-        body = `It's time for a delicious ${mealName}. Treat yourself well today! 🌸`;
-      } else {
-        title = "Messit - Meal Time!";
-        body = `Time for ${mealName}. See you at the mess!`;
-      }
+  if (!title || !body) {
+    if (mode === 'stud') {
+      title = `Yo Bro, Fuel Up! 🥩`;
+      body = `Grab your protein! ${mealName} is being served at the mess. Let's get those gains.`;
+    } else if (mode === 'princess') {
+      title = `Your Meal Awaits, Princess ✨`;
+      body = `It's time for a delicious ${mealName}. Treat yourself well today! 🌸`;
+    } else {
+      title = "Messit - Meal Time!";
+      body = `Time for ${mealName}. See you at the mess!`;
     }
+  }
 
+  // 1. In-App Notification Manager Sync (Always happens)
+  const state = useStore.getState();
+  const existing = state.notifications.some(n => n.title === title && n.body === body);
+  if (!existing) {
+    state.addNotification(title, body);
+    state.setNotificationPending(true);
+  }
+
+  // 2. Browser/PWA Alert (Permission based)
+  if (Notification.permission === "granted") {
     try {
-      console.log(`[Notifier] Attempting to fire: ${title}`);
-      
-      // Check for Service Worker registration (Required for Mobile PWA)
-      if ('serviceWorker' in navigator) {
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
         navigator.serviceWorker.ready.then((registration) => {
           registration.showNotification(title, {
             body,
             icon,
-            badge: '/favicon.png', // Small icon for notification bar
+            badge: '/favicon.png',
             vibrate: [200, 100, 200],
-            tag: 'messit-meal-notification', // Prevent duplicate stacking
+            tag: 'messit-announcement', 
             renotify: true,
             data: { url: window.location.origin }
           });
         });
       } else {
-        // Fallback for non-SW environments (Legacy)
         new Notification(title, { body, icon });
       }
-
-      // Trigger the Bell Animation via Store
-      useStore.getState().addNotification(title, body);
-      useStore.setState({ isNotificationPending: true });
-      return { success: true, title, body };
     } catch (e) {
-      console.error("[Notifier] Error creating notification:", e);
-      return { success: false, error: e.message };
+      console.error("[Notifier] Browser alert failed:", e);
     }
-  } else if (Notification.permission !== "denied") {
-    console.log("[Notifier] Requesting permission...");
-    Notification.requestPermission().then((permission) => {
-      if (permission === "granted") {
-        sendNotification(mealName, mode);
-      }
-    });
-  } else {
-    console.warn(`[Notifier] Permission denied. Current state: ${Notification.permission}`);
-    return { success: false, error: "Permission denied" };
+  } else if (Notification.permission === "default") {
+    Notification.requestPermission();
   }
+
+  return { success: true, title, body };
 };
 
 export const requestNotificationPermission = async () => {

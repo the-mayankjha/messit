@@ -278,28 +278,36 @@ export default function Dashboard() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="w-full lg:w-3/5 bg-orange-500/10 border border-orange-500/20 rounded-3xl p-4 overflow-hidden relative group"
+              className="w-full lg:w-3/5 border rounded-3xl p-4 overflow-hidden relative group shadow-2xl transition-colors duration-500"
+              style={{ 
+                backgroundColor: `${accentHex}10`, 
+                borderColor: `${accentHex}30` 
+              }}
             >
               <button 
                 onClick={() => setShowAnnouncements(false)}
-                className="absolute top-2 right-2 p-1.5 rounded-full hover:bg-orange-500/20 text-orange-500/60 hover:text-orange-500 transition-all z-20"
+                className="absolute top-2 right-2 p-1.5 rounded-full transition-all z-20"
+                style={{ color: `${accentHex}80` }}
+                onMouseEnter={(e) => e.target.style.color = accentHex}
+                onMouseLeave={(e) => e.target.style.color = `${accentHex}80`}
               >
                 <X size={14} />
               </button>
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-orange-500/20 flex items-center justify-center text-orange-500 shrink-0 shadow-lg">
+                <div 
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg border"
+                  style={{ backgroundColor: `${accentHex}20`, color: accentHex, borderColor: `${accentHex}30` }}
+                >
                   <Megaphone size={20} className="animate-bounce" />
                 </div>
                 <div className="min-w-0 pr-8">
-                   <h4 className="text-xs font-black uppercase tracking-widest text-orange-500 mb-1">Latest Broadcast</h4>
-                   <div className="flex overflow-x-auto no-scrollbar snap-x snap-mandatory gap-6">
-                     {announcements.map((ann, i) => (
-                       <div key={i} className="min-w-full snap-start">
-                         <p className="text-sm font-bold text-foreground mb-0.5 truncate">{ann.title}</p>
-                         <p className="text-xs text-muted-foreground line-clamp-1">{ann.content}</p>
-                       </div>
-                     ))}
-                   </div>
+                   <h4 className="text-[10px] font-black uppercase tracking-[0.25em] mb-1.5" style={{ color: accentHex }}>Latest Broadcast</h4>
+                   {announcements[0] && (
+                     <div className="animate-in fade-in slide-in-from-right-2 duration-500">
+                       <p className="text-sm font-bold text-foreground mb-0.5 truncate">{announcements[0].title}</p>
+                       <p className="text-xs text-muted-foreground line-clamp-1">{announcements[0].content}</p>
+                     </div>
+                   )}
                 </div>
               </div>
             </motion.div>
@@ -334,38 +342,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Cloud Sync Status Banner */}
-      {cloudMenuInfo && cloudMenuInfo.updatedAt && (
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`mb-8 p-5 rounded-[2.5rem] border backdrop-blur-xl flex items-center gap-4 animate-in fade-in slide-in-from-top-2 duration-700 ${
-            cloudMenuInfo.isFallback 
-              ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400' 
-              : 'bg-green-500/10 border-green-500/30 text-green-600 dark:text-green-400'
-          }`}
-        >
-          <div className={`p-3 rounded-2xl border flex items-center justify-center ${
-            cloudMenuInfo.isFallback ? 'bg-amber-500/20 border-amber-500/40 shadow-lg shadow-amber-500/10' : 'bg-green-500/20 border-green-500/40 shadow-lg shadow-green-500/10'
-          }`}>
-            {cloudMenuInfo.isFallback ? <AlertTriangle size={20} className="animate-pulse" /> : <CheckCircle2 size={20} />}
-          </div>
-          <div className="flex-grow">
-            <div className="flex items-center gap-2">
-               <p className="text-[10px] font-black uppercase tracking-[0.4em] leading-tight">
-                 {cloudMenuInfo.isFallback ? 'Intelligence Fallback Active' : 'Protocol Fully Synced'}
-               </p>
-               {isSyncing && <RefreshCw size={10} className="animate-spin opacity-40" />}
-            </div>
-            <p className="text-xs font-bold opacity-80 mt-1 tracking-tight">
-              {cloudMenuInfo.isFallback 
-                ? `Showing ${cloudMenuInfo.messType} menu. Your specific profile (Veg/Non-Veg) is not yet available in the vault.`
-                : `Verified ${cloudMenuInfo.messType} intelligence is active. Last integrity check: ${format(new Date(cloudMenuInfo.updatedAt), 'MMM d, h:mm a')}`
-              }
-            </p>
-          </div>
-        </motion.div>
-      )}
+      {/* Cloud Sync Status (Now managed via Notification Center) */}
 
       {view === 'day' && (
         <>
