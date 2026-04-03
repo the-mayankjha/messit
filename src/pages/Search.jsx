@@ -140,7 +140,7 @@ export default function Search() {
               )}
             </AnimatePresence>
           }
-          className="py-6 sm:py-9 text-base sm:text-lg rounded-[1.5rem] sm:rounded-[2.5rem] shadow-xl sm:shadow-2xl transition-all focus:ring-accent/20 border-border/40 group-hover:border-accent/30 group-focus-within:border-accent bg-background"
+          className="py-6 sm:py-9 text-base sm:text-lg rounded-[1.5rem] sm:rounded-[2.5rem] shadow-xl sm:shadow-2xl transition-all focus:ring-primary/20 border-border/40 group-hover:border-primary/30 group-focus-within:border-primary bg-background"
         />
         
         {/* Autosuggestions Dropdown */}
@@ -160,12 +160,12 @@ export default function Search() {
                       setQuery(suggestion);
                       setIsFocused(false);
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm sm:text-base rounded-2xl hover:bg-accent/10 transition-colors group/item"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm sm:text-base rounded-2xl hover:bg-primary/10 transition-colors group/item"
                   >
-                    <SearchIcon size={14} className="text-muted-foreground group-hover/item:text-accent transition-colors" />
+                    <SearchIcon size={14} className="text-muted-foreground group-hover/item:text-primary transition-colors" />
                     <span className="flex-1 truncate font-medium">{suggestion}</span>
                     <div className="flex items-center gap-1.5 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                      <span className="text-[10px] uppercase font-bold tracking-widest text-accent">Select</span>
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-primary">Select</span>
                     </div>
                   </button>
                 ))}
@@ -195,12 +195,12 @@ export default function Search() {
                 >
                   {[...Array(3)].map((_, i) => (
                     <div key={i} className="flex gap-12 shrink-0">
-                      <CalendarDaysIcon size={28} className="text-accent/60 shrink-0" />
-                      <CoffeeIcon size={28} className="text-accent/60 shrink-0" />
-                      <LunchIcon size={28} className="text-accent/60 shrink-0" />
-                      <SnacksIcon size={28} className="text-accent/60 shrink-0" />
-                      <DinnerIcon size={28} className="text-accent/60 shrink-0" />
-                      <CookingPotIcon size={28} className="text-accent/60 shrink-0" />
+                      <CalendarDaysIcon size={28} className="text-primary/60 shrink-0" />
+                      <CoffeeIcon size={28} className="text-primary/60 shrink-0" />
+                      <LunchIcon size={28} className="text-primary/60 shrink-0" />
+                      <SnacksIcon size={28} className="text-primary/60 shrink-0" />
+                      <DinnerIcon size={28} className="text-primary/60 shrink-0" />
+                      <CookingPotIcon size={28} className="text-primary/60 shrink-0" />
                     </div>
                   ))}
                 </motion.div>
@@ -217,10 +217,10 @@ export default function Search() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="group"
               >
-                <Card className="overflow-hidden border-border/40 hover:border-accent/40 bg-card/20 hover:bg-card/40 transition-all duration-300 backdrop-blur-sm">
+                <Card className="overflow-hidden border-border/40 hover:border-primary/40 bg-card/20 hover:bg-card/40 transition-all duration-300 backdrop-blur-sm">
                   <CardHeader className="py-3 sm:py-4 border-b border-border/40 flex flex-row items-center justify-between gap-2">
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-accent/10 flex items-center justify-center text-accent font-bold text-sm sm:text-base">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold text-sm sm:text-base">
                         {result.date}
                       </div>
                       <div>
@@ -228,7 +228,7 @@ export default function Search() {
                         <p className="text-[9px] sm:text-[10px] uppercase font-bold text-muted-foreground tracking-widest">{result.dayInfo.full}</p>
                       </div>
                     </div>
-                    <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest px-2 sm:px-3 py-1 bg-accent/10 text-accent rounded-full border border-accent/20 whitespace-nowrap">
+                    <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest px-2 sm:px-3 py-1 bg-primary/10 text-primary rounded-full border border-primary/20 whitespace-nowrap">
                       {result.matchType} match
                     </span>
                   </CardHeader>
@@ -241,16 +241,16 @@ export default function Search() {
                         // Highlight matching items
                         const isHit = items.some(i => i.toLowerCase().includes(query.toLowerCase().trim()));
                         const Icon = mealType === 'breakfast' ? CoffeeIcon : mealType === 'lunch' ? LunchIcon : mealType === 'snacks' ? SnacksIcon : DinnerIcon;
-
+ 
                         return (
                           <div 
                             key={mealType} 
                             className={`p-4 rounded-2xl border transition-all ${
-                              isHit ? 'bg-accent/5 border-accent/30' : 'bg-muted/10 border-border/20 opacity-60'
+                              isHit ? 'bg-primary/5 border-primary/30' : 'bg-muted/10 border-border/20 opacity-60'
                             }`}
                           >
                             <div className="flex items-center gap-2 mb-2">
-                               <Icon size={14} className={isHit ? "text-accent" : "text-muted-foreground"} />
+                               <Icon size={14} className={isHit ? "text-primary" : "text-muted-foreground"} />
                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-80">{mealType}</span>
                             </div>
                             <ul className="space-y-1">

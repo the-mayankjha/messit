@@ -18,17 +18,35 @@ import NotificationDrawer from './components/NotificationDrawer';
 export default function App() {
   const { 
     theme, 
-    accentColor, 
     menuData, 
     notificationMode, 
     isNotificationPending, 
     setNotificationPending,
     isOnboarded,
     setIsOnboarded,
-    setUser 
+    setUser,
+    hostel, // Track profile completion
+    notifications, 
+    setDrawerOpen
   } = useStore();
 
+  const unreadCount = notifications.filter(n => !n.read).length;
+
   const { user: auth0User, isAuthenticated, isLoading } = useAuth0();
+
+  // 1. ALL HOOKS MUST BE DEFINED HERE (Top Level)
+  
+  // Page State
+  const [currentPage, setCurrentPage] = useState(menuData ? 'dashboard' : 'upload');
+  
+  // Refs for animations
+  const bellRef = useRef(null);
+  const settingsIconRef = useRef(null);
+  const uploadIconRef = useRef(null);
+  const searchIconRef = useRef(null);
+  const mobileSettingsIconRef = useRef(null);
+  const mobileUploadIconRef = useRef(null);
+  const mobileSearchIconRef = useRef(null);
 
   // Sync Auth0 User with Store
   useEffect(() => {
@@ -38,13 +56,12 @@ export default function App() {
         email: auth0User.email,
         picture: auth0User.picture
       });
-      // If we're authenticated, we're onboarded
-      setIsOnboarded(true);
+
+      if (!hostel) {
+        setIsOnboarded(false);
+      }
     }
-  }, [isAuthenticated, auth0User, setUser, setIsOnboarded]);
-  
-  // 'dashboard' | 'upload' | 'settings'
-  const [currentPage, setCurrentPage] = useState(menuData ? 'dashboard' : 'upload');
+  }, [isAuthenticated, auth0User, setUser, hostel, setIsOnboarded]);
 
   // Sync current page with menuData availability
   useEffect(() => {
@@ -52,15 +69,8 @@ export default function App() {
       setCurrentPage('upload');
     }
   }, [menuData, currentPage]);
-  const bellRef = useRef(null);
-  const settingsIconRef = useRef(null);
-  const uploadIconRef = useRef(null);
-  const searchIconRef = useRef(null);
-  const mobileSettingsIconRef = useRef(null);
-  const mobileUploadIconRef = useRef(null);
-  const mobileSearchIconRef = useRef(null);
 
-  // Apply Theme and Accent
+  // Apply Theme
   useEffect(() => {
     const root = window.document.documentElement;
     root.classList.remove('light', 'dark');
@@ -71,32 +81,21 @@ export default function App() {
     } else {
       root.classList.add(theme);
     }
+  }, [theme]);
 
-    // Apply accent classes by clearing old ones
-    root.classList.remove('theme-red', 'theme-blue', 'theme-green', 'theme-purple', 'theme-orange');
-    
-    if (accentColor !== 'default') {
-      root.classList.add(`theme-${accentColor}`);
-    }
-
-  }, [theme, accentColor]);
-
-  // Handle Automatic Notifications with de-duplication
+  // Notifications Logic
   useEffect(() => {
     const { lastNotifiedMeal, setLastNotifiedMeal } = useStore.getState();
-
-    // Only check if they haven't explicitly denied
     if ("Notification" in window && Notification.permission !== "denied") {
       requestNotificationPermission();
     }
 
     const checkMealTimes = () => {
       const now = new Date();
-      const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+      const dateStr = now.toISOString().split('T')[0];
       const hours = now.getHours();
       const mins = now.getMinutes();
 
-      // Only notify if we have a menu uploaded
       if (!menuData) return;
 
       const schedules = [
@@ -115,22 +114,36 @@ export default function App() {
       });
     };
 
-    // Check once immediately then every minute
     checkMealTimes();
     const interval = setInterval(checkMealTimes, 60000);
-
     return () => clearInterval(interval);
   }, [notificationMode, menuData]);
 
-  // Handle Bell Animation Trigger
   useEffect(() => {
     if (isNotificationPending && bellRef.current) {
       bellRef.current.shake();
     }
   }, [isNotificationPending]);
 
-  const { notifications, setDrawerOpen } = useStore();
-  const unreadCount = notifications.filter(n => !n.read).length;
+  // 2. CONDITIONAL RETURNS (After all hooks)
+
+  const needsOnboarding = isAuthenticated ? !hostel : !isOnboarded;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 space-y-6 text-center">
+        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+        <div>
+          <p className="text-xs font-bold tracking-widest uppercase text-primary animate-pulse">Initializing Identity...</p>
+          <p className="text-[10px] text-muted-foreground mt-2">Checking secure tunnel to Auth0</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (needsOnboarding) {
+    return <Onboarding />;
+  }
 
   const BellWithBadge = ({ isMobile = false }) => (
     <div className="relative">
@@ -145,7 +158,7 @@ export default function App() {
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          className="absolute top-2 right-2 w-2.5 h-2.5 bg-accent rounded-full border-2 border-background shadow-sm pointer-events-none"
+          className="absolute top-2 right-2 w-2.5 h-2.5 bg-primary rounded-full border-2 border-background shadow-sm pointer-events-none"
         />
       )}
     </div>
@@ -210,7 +223,7 @@ export default function App() {
                     onClick={() => handleNavClick(item.id)}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-300 relative ${
                       isActive 
-                        ? 'bg-background text-accent-foreground shadow-sm font-semibold' 
+                        ? 'bg-background text-primary-foreground shadow-sm font-semibold' 
                         : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                     }`}
                   >
@@ -264,7 +277,7 @@ export default function App() {
               onClick={() => handleNavClick(item.id)}
               className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl transition-all duration-300 relative ${
                 isActive 
-                  ? 'bg-accent/10 text-accent-foreground' 
+                  ? 'bg-primary/10 text-primary-foreground' 
                   : 'text-muted-foreground/60'
               }`}
             >
@@ -281,7 +294,7 @@ export default function App() {
               {isActive && (
                 <motion.div
                   layoutId="active-pill-mobile"
-                  className="absolute inset-0 bg-accent/5 rounded-2xl -z-10"
+                  className="absolute inset-0 bg-primary/5 rounded-2xl -z-10"
                   transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                 />
               )}

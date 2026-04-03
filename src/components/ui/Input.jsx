@@ -11,20 +11,20 @@ const Input = forwardRef(({ className, type, icon: Icon, label, ...props }, ref)
       )}
       <div className="relative group">
         {Icon && (
-          <Icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40 group-focus-within:text-accent/70 transition-colors" />
+          <Icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40 group-focus-within:text-primary/70 transition-colors" />
         )}
         <input
           type={type}
           className={cn(
-            "flex w-full rounded-2xl border border-border/20 bg-muted/10 px-4 py-3.5 text-sm transition-all",
+            "flex w-full rounded-2xl border border-border/40 bg-[#202020] px-5 py-4 text-sm transition-all shadow-inner",
             "file:border-0 file:bg-transparent file:text-sm file:font-medium",
-            "placeholder:text-muted-foreground/30",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-transparent",
+            "placeholder:text-muted-foreground/20",
+            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/20",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            "selection:bg-accent/30 selection:text-foreground",
+            "selection:bg-primary/30 selection:text-foreground",
             /* Autofill styling override */
             "[&:-webkit-autofill]:shadow-[0_0_0_1000px_#191919_inset] [&:-webkit-autofill]:text-fill-foreground",
-            Icon && "pl-11",
+            Icon && "pl-12",
             className
           )}
           ref={ref}

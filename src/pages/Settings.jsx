@@ -1,50 +1,94 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store/useStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Moon, Sun, Check, Crown, Dumbbell, Bell } from 'lucide-react';
+import { Input } from '../components/ui/Input';
+import { 
+  Moon, Sun, Check, Crown, Dumbbell, Bell, 
+  User, Mail, Building, Key, ShieldCheck,
+  ShieldAlert, RefreshCw, Save, UserX
+} from 'lucide-react';
+import { GoogleIcon } from '../components/ui/icons/GoogleIcon';
+import { GithubIcon } from '../components/ui/icons/GithubIcon';
 import { BellRingIcon } from '../components/ui/icons/BellRingIcon';
 import { useAuth0 } from '@auth0/auth0-react';
 import { requestNotificationPermission, sendNotification } from '../utils/notifier';
 
 export default function Settings() {
-  const { logout } = useAuth0();
+  const { logout, user: auth0User, isAuthenticated } = useAuth0();
   const { 
-    theme, 
-    setTheme, 
-    accentColor, 
-    setAccentColor, 
-    notificationMode, 
-    setNotificationMode,
-    setUser,
-    setIsOnboarded,
-    setMenuData
+    theme, setTheme, 
+    notificationMode, setNotificationMode,
+    user, setUser,
+    hostel, setProfile,
+    roomNumber, messType, gender, role,
+    setIsOnboarded, setMenuData
   } = useStore();
 
+  // Local state for editing
+  const [localHostel, setLocalHostel] = useState(hostel);
+  const [localRoom, setLocalRoom] = useState(roomNumber);
+  const [localMess, setLocalMess] = useState(messType);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const hostels = {
+    male: ['MH1', 'MH2', 'MH3', 'MH4', 'MH5', 'MH6', 'MH7'],
+    female: ['LH1', 'LH2', 'LH3', 'LH4', 'LH5']
+  };
+
+  const loginProvider = useMemo(() => {
+    if (!auth0User?.sub) return 'Guest';
+    if (auth0User.sub.startsWith('google')) return 'Google';
+    if (auth0User.sub.startsWith('github')) return 'GitHub';
+    return 'Email';
+  }, [auth0User]);
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    setSaveSuccess(false);
+
+    const calculatedGender = localHostel?.startsWith('MH') ? 'Male' : 'Female';
+    
+    const updatedProfile = {
+      hostel: localHostel,
+      roomNumber: localRoom,
+      messType: localMess,
+      gender: calculatedGender,
+      role: role
+    };
+
+    setProfile(updatedProfile);
+
+    // Supabase Sync
+    try {
+      const { syncSupabaseProfile } = await import('../lib/supabase');
+      await syncSupabaseProfile({
+        ...updatedProfile,
+        email: user?.email,
+        name: user?.name
+      });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error("Sync failed:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleLogout = () => {
-    // Clear local state
     setUser(null);
     setIsOnboarded(false);
-    // Logout from Auth0
     logout({ logoutParams: { returnTo: window.location.origin } });
   };
   const [testMeal, setTestMeal] = useState('Lunch');
   const [lastTestResult, setLastTestResult] = useState(null);
 
-  const testMeals = ['Breakfast', 'Lunch', 'Snacks', 'Dinner'];
-
   const themes = [
     { id: 'light', icon: Sun, label: 'Light' },
     { id: 'dark', icon: Moon, label: 'Dark' }
-  ];
-
-  const accents = [
-    { id: 'default', color: 'bg-gray-500', label: 'Default' },
-    { id: 'red', color: 'bg-red-500', label: 'Red' },
-    { id: 'blue', color: 'bg-blue-500', label: 'Blue' },
-    { id: 'green', color: 'bg-green-500', label: 'Green' },
-    { id: 'purple', color: 'bg-purple-500', label: 'Purple' },
-    { id: 'orange', color: 'bg-orange-500', label: 'Orange' }
   ];
 
   const handleTestNotification = async () => {
@@ -71,174 +115,328 @@ export default function Settings() {
   }, [notificationMode, testMeal]);
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4 animate-in fade-in duration-500">
-      <h1 className="text-3xl font-bold tracking-tight mb-8">Settings</h1>
+    <div className="max-w-4xl mx-auto py-8 sm:py-12 px-4 sm:px-6 animate-in fade-in slide-in-from-bottom-5 duration-700">
+      
+      {/* Header: Responsive Stacking */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 sm:mb-12 gap-6">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2">Settings</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage your identity and preferences.</p>
+        </div>
+        {user && (
+          <div className="flex items-center gap-4 bg-muted/30 px-4 sm:px-5 py-3 rounded-2xl border border-border/40 w-full sm:w-auto">
+            <img src={user?.picture || "/icon.png"} className="w-10 h-10 rounded-full border-2 border-primary shadow-sm" alt="" />
+            <div className="min-w-0">
+              <p className="font-bold text-sm leading-tight truncate">{user?.name}</p>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 truncate">
+                  {role === 'None' || !role ? 'STUDENT' : role.toUpperCase()}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         
-        {/* Theme Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Appearance</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">Customize how the app looks.</p>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            
-            <div>
-              <p className="font-medium mb-3">Theme Mode</p>
-              <div className="flex gap-3">
+        {/* Left Column: Account & Profile */}
+        <div className="lg:col-span-2 space-y-6 sm:space-y-8">
+          
+          {/* Campus Profile Section */}
+          <Card className="overflow-hidden border-none shadow-2xl shadow-primary/5">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl sm:text-2xl font-bold">Campus Profile</CardTitle>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1 text-balance">Update your mess and hostel preferences.</p>
+                </div>
+                <Building className="text-muted-foreground/40 w-6 h-6 sm:w-8 sm:h-8" />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6 sm:space-y-8 pt-4">
+              
+              {/* Hostel Picker: Integrated Style */}
+              <div className="space-y-4">
+                <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70">Assigned Hostel</label>
+                <div className="space-y-3 bg-muted/20 p-2 rounded-[2rem]">
+                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-1">
+                    {hostels.male.map(h => (
+                      <button
+                        key={h}
+                        onClick={() => setLocalHostel(h)}
+                        className={`py-2.5 sm:py-3 rounded-2xl text-[10px] sm:text-xs font-bold transition-all ${
+                          localHostel === h ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                        }`}
+                      >
+                        {h}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-5 gap-1">
+                    {hostels.female.map(h => (
+                      <button
+                        key={h}
+                        onClick={() => setLocalHostel(h)}
+                        className={`py-2.5 sm:py-3 rounded-2xl text-[10px] sm:text-xs font-bold transition-all ${
+                          localHostel === h ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                        }`}
+                      >
+                        {h}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 mb-3 sm:mb-4 block">Mess Preference</label>
+                  <div className="flex bg-muted/20 p-1 rounded-2xl gap-1">
+                    {['Veg', 'Non-Veg', 'Special'].map(type => (
+                      <button
+                        key={type}
+                        onClick={() => setLocalMess(type)}
+                        className={`flex-1 py-2.5 sm:py-3 rounded-xl text-[10px] sm:text-xs font-bold transition-all ${
+                          localMess === type ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <Input
+                  label="Room Number"
+                  placeholder="e.g. 402"
+                  value={localRoom}
+                  onChange={(e) => setLocalRoom(e.target.value)}
+                />
+              </div>
+
+              {/* Role Display: Read-Only */}
+              <div className="pt-4 border-t border-border/40">
+                 <div className="flex items-center justify-between p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                   <div className="flex items-center gap-4">
+                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                       <ShieldCheck size={20} />
+                     </div>
+                     <div>
+                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Platform Role</p>
+                       <p className="font-bold text-primary">{role || 'None'}</p>
+                     </div>
+                   </div>
+                   <div className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20">
+                     <p className="text-[8px] font-bold uppercase tracking-tighter text-primary">Locked</p>
+                   </div>
+                 </div>
+                 <p className="text-[10px] text-muted-foreground mt-3 italic text-center sm:text-left">Your role is set during onboarding and cannot be changed without administrator approval.</p>
+              </div>
+
+              <div className="pt-6 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                   {saveSuccess && (
+                     <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex items-center gap-2 text-green-500 font-bold text-sm">
+                       <ShieldCheck size={18} />
+                       Changes Synced
+                     </motion.div>
+                   )}
+                </div>
+                <Button 
+                  onClick={handleSaveProfile}
+                  disabled={isSaving}
+                  className="w-full sm:w-auto px-8 rounded-xl font-bold shadow-lg shadow-primary/20"
+                >
+                  {isSaving ? (
+                    <RefreshCw className="animate-spin mr-2 w-4 h-4" />
+                  ) : (
+                    <Save className="mr-2 w-4 h-4" />
+                  )}
+                  Save Profile
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Identity & Security Card */}
+          <Card className="border-none shadow-xl shadow-muted/50">
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl">Identity & Security</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-muted/20">
+                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                     <User size={20} />
+                   </div>
+                   <div className="min-w-0">
+                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Full Name</p>
+                     <p className="font-semibold truncate">{user?.name}</p>
+                   </div>
+                 </div>
+                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-muted/20">
+                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                     <Mail size={20} />
+                   </div>
+                   <div className="min-w-0">
+                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Email Address</p>
+                     <p className="font-semibold text-sm truncate">{user?.email}</p>
+                   </div>
+                 </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between p-5 sm:p-6 rounded-3xl border border-dashed border-border/60 gap-4">
+                 <div className="flex items-center gap-4 w-full sm:w-auto">
+                  {loginProvider === 'Google' && (
+                    <div className="w-10 h-10 rounded-2xl bg-[#191919] border border-border/40 flex items-center justify-center shadow-inner">
+                      <GoogleIcon size={24} isAnimated={false} />
+                    </div>
+                  )}
+                  {loginProvider === 'GitHub' && (
+                    <div className="w-10 h-10 rounded-2xl bg-[#191919] border border-border/40 flex items-center justify-center shadow-inner">
+                      <GithubIcon size={24} isAnimated={false} />
+                    </div>
+                  )}
+                  {loginProvider === 'Email' && (
+                    <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-inner">
+                      <User size={22} />
+                    </div>
+                  )}
+                  {loginProvider === 'Guest' && (
+                    <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 shadow-inner">
+                      <UserX size={22} />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-sm sm:text-base">Login Method</h4>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Direct {loginProvider} Authentication</p>
+                  </div>
+                </div>
+                {loginProvider === 'Email' && (
+                  <Button variant="outline" className="w-full sm:w-auto rounded-[1.2rem] h-12 px-6 border-border/80 hover:bg-primary/5">
+                    <Key size={16} className="mr-2" />
+                    Change Password
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column: Theme & Notifications */}
+        <div className="space-y-6 sm:space-y-8">
+          
+          {/* Appearance Card */}
+          <Card className="border-none bg-muted/5">
+            <CardHeader>
+              <CardTitle className="text-lg">Appearance</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex gap-2">
                 {themes.map((t) => {
                   const Icon = t.icon;
                   return (
                     <button
                       key={t.id}
                       onClick={() => setTheme(t.id)}
-                      className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all w-24 ${
-                        theme === t.id ? 'border-accent bg-accent/10' : 'border-border hover:bg-muted'
+                      className={`flex-1 flex flex-col items-center justify-center py-4 rounded-2xl border-2 transition-all ${
+                        theme === t.id ? 'border-primary bg-primary/10' : 'border-border/40 hover:bg-muted'
                       }`}
                     >
-                      <Icon className="w-6 h-6 mb-2" />
-                      <span className="text-sm font-medium">{t.label}</span>
+                      <Icon className="w-5 h-5 mb-2" />
+                      <span className="text-[10px] sm:text-xs font-bold">{t.label}</span>
                     </button>
                   )
                 })}
               </div>
-            </div>
+            </CardContent>
+          </Card>
 
-            <div>
-              <p className="font-medium mb-3">Accent Color</p>
-              <div className="flex flex-wrap gap-3">
-                {accents.map((a) => (
+          {/* Vibe Settings Card: Redesigned for Vertical Personality */}
+          <Card className="border-none bg-muted/5 shadow-xl shadow-muted/50">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-xl font-bold">Notifications</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Configure your meal reminders.</p>
+                </div>
+                <BellRingIcon size={22} className="text-muted-foreground/50" />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6 pt-6">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Notification Style</p>
+                <div className="space-y-3">
+                  
+                  {/* Stud Mode Card */}
                   <button
-                    key={a.id}
-                    onClick={() => setAccentColor(a.id)}
-                    className={`flex items-center gap-2 p-2 pr-4 rounded-full border-2 transition-all ${
-                      accentColor === a.id ? 'border-foreground shadow-sm' : 'border-transparent hover:bg-muted'
+                    onClick={() => setNotificationMode('stud')}
+                    className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-300 group ${
+                      notificationMode === 'stud' 
+                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/5' 
+                        : 'border-border/40 hover:border-primary/20 bg-muted/20 hover:bg-muted/30'
                     }`}
                   >
-                    <div className={`w-6 h-6 rounded-full ${a.color} flex items-center justify-center text-white`}>
-                      {accentColor === a.id && <Check className="w-3 h-3" />}
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`p-2 rounded-xl transition-colors ${notificationMode === 'stud' ? 'bg-muted/40 text-foreground' : 'bg-muted/40 text-muted-foreground group-hover:text-primary/60'}`}>
+                        <Dumbbell size={20} />
+                      </div>
+                      <h4 className="font-bold text-lg text-foreground">Stud Mode</h4>
                     </div>
-                    <span className="text-sm font-medium">{a.label}</span>
+                    <p className="text-sm text-muted-foreground pl-11 leading-relaxed opacity-80 italic">
+                      "Yo Bro, Fuel Up! Grab your protein..."
+                    </p>
                   </button>
-                ))}
-              </div>
-            </div>
 
-          </CardContent>
-        </Card>
+                  {/* Princess Mode Card */}
+                  <button
+                    onClick={() => setNotificationMode('princess')}
+                    className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-300 group ${
+                      notificationMode === 'princess' 
+                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/5' 
+                        : 'border-border/40 hover:border-primary/20 bg-muted/20 hover:bg-muted/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`p-2 rounded-xl transition-colors ${notificationMode === 'princess' ? 'bg-muted/40 text-foreground' : 'bg-muted/40 text-muted-foreground group-hover:text-primary/60'}`}>
+                        <Crown size={20} />
+                      </div>
+                      <h4 className="font-bold text-lg text-foreground">Princess Mode</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground pl-11 leading-relaxed opacity-80 italic">
+                      "Your Meal Awaits, Princess. Time for a delicious..."
+                    </p>
+                  </button>
 
-        {/* Notification Settings */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl">Notifications</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">Configure your meal reminders.</p>
-              </div>
-              <BellRingIcon size={20} className="text-muted-foreground" />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            
-            <div>
-              <p className="font-medium mb-3">Notification Style</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                <button
-                  onClick={() => setNotificationMode('stud')}
-                  className={`flex flex-col text-left p-4 rounded-xl border-2 transition-all ${
-                    notificationMode === 'stud' ? 'border-accent bg-accent/10' : 'border-border hover:bg-muted'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-2 font-semibold">
-                    <Dumbbell className="w-5 h-5" />
-                    Stud Mode
-                  </div>
-                  <p className="text-sm text-muted-foreground">"Yo Bro, Fuel Up! Grab your protein..."</p>
-                </button>
-
-                <button
-                  onClick={() => setNotificationMode('princess')}
-                  className={`flex flex-col text-left p-4 rounded-xl border-2 transition-all ${
-                    notificationMode === 'princess' ? 'border-accent bg-accent/10' : 'border-border hover:bg-muted'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-2 font-semibold">
-                    <Crown className="w-5 h-5" />
-                    Princess Mode
-                  </div>
-                  <p className="text-sm text-muted-foreground">"Your Meal Awaits, Princess. Time for a delicious..."</p>
-                </button>
-
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-border space-y-6">
-              <div className="flex flex-col gap-4">
-                <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Notification Tester</p>
-                
-                {/* Meal Selector */}
-                <div className="flex flex-wrap gap-2">
-                  {testMeals.map(m => (
-                    <button
-                      key={m}
-                      onClick={() => setTestMeal(m)}
-                      className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${
-                        testMeal === m ? 'bg-accent text-accent-foreground shadow-sm' : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Preview Card */}
-                <div className="p-4 rounded-2xl bg-muted/30 border border-border/50 relative overflow-hidden group/preview">
-                  <div className="absolute top-0 right-0 p-3 opacity-10 group-hover/preview:opacity-20 transition-opacity">
-                    <BellRingIcon size={40} />
-                  </div>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent mb-2">Live Preview</p>
-                  <h4 className="font-bold text-sm mb-1">{previewContent.title}</h4>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{previewContent.body}</p>
                 </div>
               </div>
 
-              <Button onClick={handleTestNotification} size="lg" className="group w-full rounded-2xl py-7 text-base font-bold shadow-xl hover:shadow-accent/20 transition-all">
-                <BellRingIcon size={20} className="mr-3 group-hover:block hidden animate-bounce" />
-                Fire Test Notification
-              </Button>
-            </div>
+              <div className="pt-4 border-t border-border/40">
+                <Button onClick={handleTestNotification} variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-widest hover:text-primary transition-all">
+                   Fire Test Alert
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-          </CardContent>
-        </Card>
-
-        {/* Danger Zone */}
-        <Card className="border-red-500/20 bg-red-500/5">
-          <CardHeader>
-            <CardTitle className="text-xl text-red-500">Danger Zone</CardTitle>
-            <p className="text-sm text-red-500/60 mt-1">Irreversible actions for your account and data.</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
+          {/* Logout Section */}
+          <div className="pt-4 sm:pt-8 space-y-6">
+             <Button 
                 onClick={handleLogout}
-                variant="outline" 
-                className="border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-xl flex-1"
+                className="w-full bg-red-500 hover:bg-red-600 text-white shadow-xl shadow-red-500/10 py-7 rounded-3xl font-bold tracking-wide transition-all active:scale-95"
               >
-                Log Out
+                Sign Out Securely
               </Button>
-              <Button 
-                onClick={() => setMenuData(null)}
-                variant="outline" 
-                className="border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white transition-all rounded-xl flex-1"
-              >
-                Clear Menu Data
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
+              <div className="text-center space-y-1">
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+                  App Version 1.2.0 (Stable)
+                </p>
+                <p className="text-[9px] text-muted-foreground/40 font-medium">Build: 2026.04.03.PRO</p>
+              </div>
+          </div>
+        </div>
       </div>
     </div>
   );

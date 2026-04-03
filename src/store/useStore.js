@@ -6,22 +6,37 @@ export const useStore = create(
     (set) => ({
       // Settings
       theme: 'system', // 'light', 'dark', 'system'
-      accentColor: 'default', // 'default', 'red', 'blue', 'green', 'purple', 'orange'
       notificationMode: 'stud', // 'stud', 'princess'
       
       setTheme: (theme) => set({ theme }),
-      setAccentColor: (accentColor) => set({ accentColor }),
       setNotificationMode: (notificationMode) => set({ notificationMode }),
-
-      // Menu Data
-      menuData: null, 
-      setMenuData: (menuData) => set({ menuData }),
 
       // Onboarding & Auth
       isOnboarded: false,
-      user: null, // { name, email } mock
+      user: null, // { name, email, picture }
+      
+      // Profile Details
+      hostel: null, // 'MH1'-'MH7', 'LH1'-'LH5'
+      roomNumber: '',
+      messType: 'Veg', // 'Veg', 'Non-Veg', 'Special'
+      gender: null, // 'Male', 'Female'
+      role: 'None', // 'Admin', 'Coordinator', 'Developer', 'None'
+
       setIsOnboarded: (isOnboarded) => set({ isOnboarded }),
       setUser: (user) => set({ user }),
+      
+      setProfile: (profile) => set((state) => ({
+        ...state,
+        ...profile
+      })),
+
+      // Menu Data (Persistent)
+      menuData: null,
+      setMenuData: (menuData) => set({ menuData }),
+
+      // Notification Tracking (Persistent)
+      lastNotifiedMeal: null,
+      setLastNotifiedMeal: (lastNotifiedMeal) => set({ lastNotifiedMeal }),
 
       // Real-time UI State (Un-persistent)
       isNotificationPending: false,

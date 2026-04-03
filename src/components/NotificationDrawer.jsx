@@ -143,7 +143,7 @@ function NotificationItem({ notification, onRemove }) {
         className={`p-4 rounded-2xl border transition-all duration-300 bg-card shadow-sm ${
           notification.read 
             ? 'opacity-60 border-border/50' 
-            : 'border-accent/20 bg-accent/[0.02] shadow-accent/5'
+            : 'border-primary/20 bg-primary/[0.02] shadow-primary/5'
         }`}
       >
         <div className="flex items-start gap-4">
@@ -156,7 +156,7 @@ function NotificationItem({ notification, onRemove }) {
             {!notification.read && (
               <motion.div
                 layoutId={`dot-${notification.id}`}
-                className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-accent rounded-full border border-card shadow-sm"
+                className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full border border-card shadow-sm"
               />
             )}
           </div>
@@ -167,7 +167,7 @@ function NotificationItem({ notification, onRemove }) {
               <span className="text-[10px] text-muted-foreground/40 font-medium uppercase tracking-wider">
                 {formatDistanceToNow(new Date(notification.timestamp), { addSuffix: true })}
               </span>
-              <CheckCheck size={12} className="text-accent-foreground" />
+              <CheckCheck size={12} className="text-primary-foreground" />
             </div>
           </div>
         </div>

@@ -160,24 +160,24 @@ export default function Dashboard() {
           </div>
         )}
         <Card className="h-full flex flex-col group">
-          <CardHeader className={`pb-3 border-b transition-colors ${meal.status === 'Ongoing' ? 'bg-accent/10 border-accent/20' : 'border-border/50 bg-muted/10 group-hover:bg-muted/20'}`}>
+          <CardHeader className={`pb-3 border-b transition-colors ${meal.status === 'Ongoing' ? 'bg-primary/10 border-primary/20' : 'border-border/50 bg-muted/10 group-hover:bg-muted/20'}`}>
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className={`p-2.5 rounded-xl shadow-sm ${meal.status === 'Done' ? 'bg-muted text-muted-foreground' : 'bg-accent/30 text-accent-foreground'}`}>
+                <div className={`p-2.5 rounded-xl shadow-sm ${meal.status === 'Done' ? 'bg-muted text-muted-foreground' : 'bg-primary/30 text-primary-foreground'}`}>
                   <MealIcon className="w-5 h-5" />
                 </div>
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     {meal.label}
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold tracking-wider uppercase ${
-                      meal.status === 'Ongoing' ? 'bg-accent text-accent-foreground animate-pulse' :
-                      meal.status === 'Upcoming' ? 'bg-accent/20 text-accent-foreground' :
+                      meal.status === 'Ongoing' ? 'bg-primary text-primary-foreground animate-pulse' :
+                      meal.status === 'Upcoming' ? 'bg-primary/20 text-primary-foreground' :
                       'bg-muted text-muted-foreground'
                     }`}>
                       {meal.status}
                     </span>
                   </CardTitle>
-                  <p className={`text-xs mt-0.5 font-semibold tracking-wide ${meal.status === 'Done' ? 'text-muted-foreground' : 'text-accent-foreground'}`}>
+                  <p className={`text-xs mt-0.5 font-semibold tracking-wide ${meal.status === 'Done' ? 'text-muted-foreground' : 'text-primary-foreground'}`}>
                     {meal.time}
                   </p>
                 </div>
@@ -196,7 +196,7 @@ export default function Dashboard() {
               <ul className="space-y-3">
                 {items.map((item, idx) => (
                   <li key={idx} className="flex items-start gap-3">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2 flex-shrink-0" />
                     <span className="leading-relaxed">{item}</span>
                   </li>
                 ))}
@@ -241,7 +241,7 @@ export default function Dashboard() {
                   onClick={() => setView(v)}
                   className={`px-5 py-1.5 rounded-lg text-sm font-medium transition-all outline-none focus:outline-none focus:ring-0 ${
                     view === v 
-                      ? 'bg-accent text-accent-foreground' 
+                      ? 'bg-primary text-primary-foreground' 
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
                   }`}
                 >
@@ -284,7 +284,7 @@ export default function Dashboard() {
                     }`}
                   >
                     {isSelected && (
-                      <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-accent-foreground rounded-t-full" />
+                      <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary-foreground rounded-t-full" />
                     )}
                     <span className={`text-[9px] sm:text-[10px] font-semibold tracking-widest uppercase ${isSelected ? 'text-foreground opacity-90' : 'text-muted-foreground'}`}>
                       {format(date, 'MMM')}
@@ -292,7 +292,7 @@ export default function Dashboard() {
                     <span className={`text-lg sm:text-2xl font-bold my-0.5 sm:my-1 ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>
                       {format(date, 'd')}
                     </span>
-                    <span className={`text-[9px] sm:text-[10px] font-semibold tracking-wider ${isSelected ? 'text-accent-foreground' : 'text-muted-foreground'}`}>
+                    <span className={`text-[9px] sm:text-[10px] font-semibold tracking-wider ${isSelected ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
                       {isDateTodayBool ? 'TODAY' : format(date, 'EEE').toUpperCase()}
                     </span>
                   </div>
@@ -335,10 +335,10 @@ export default function Dashboard() {
                 const dMenu = menuData[date.getDate()] || { breakfast: [], lunch: [], snacks: [], dinner: [] };
                 
                 return (
-                  <tr key={date.toISOString()} className={`border-b border-border last:border-0 hover:bg-muted/30 transition-colors ${isSelected ? 'bg-accent/5' : ''}`}>
+                  <tr key={date.toISOString()} className={`border-b border-border last:border-0 hover:bg-muted/30 transition-colors ${isSelected ? 'bg-primary/5' : ''}`}>
                     <td className="px-6 py-4 font-medium">
                       <div className="flex items-center gap-2 text-foreground">
-                        {isSelected && <span className="w-2 h-2 rounded-full bg-accent" />}
+                        {isSelected && <span className="w-2 h-2 rounded-full bg-primary" />}
                         <div className="flex flex-col">
                           <span className="font-bold">{format(date, 'd')}</span>
                           <span className="text-[10px] text-muted-foreground uppercase">{format(date, 'EEE')}</span>
@@ -415,7 +415,7 @@ export default function Dashboard() {
                 >
                   <div className="flex justify-between items-start">
                     <span className={`w-7 h-7 flex flex-shrink-0 items-center justify-center rounded-full text-sm font-medium ${
-                      isDateTodayBool ? 'bg-accent text-accent-foreground' : isSelected ? 'ring-2 ring-accent text-foreground' : 'text-muted-foreground'
+                      isDateTodayBool ? 'bg-primary text-primary-foreground' : isSelected ? 'ring-2 ring-primary text-foreground' : 'text-muted-foreground'
                     }`}>
                       {format(date, 'd')}
                     </span>
@@ -424,7 +424,7 @@ export default function Dashboard() {
                   {hasMenu && isCurrentMonth && (
                     <div className="mt-auto pointer-events-none">
                       <div className="flex gap-1 mb-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-accent/60"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/60"></span>
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500/60"></span>
                         <span className="w-1.5 h-1.5 rounded-full bg-orange-500/60"></span>
                       </div>

@@ -79,18 +79,18 @@ export default function UploadMenu({ onComplete }) {
         />
         <div className={`
           border-2 border-dashed rounded-2xl p-16 text-center transition-all duration-300
-          ${dragActive ? 'bg-accent/10 border-accent/40 scale-[1.02]' : 'bg-muted/5 border-border/40 group-hover:border-accent/30 group-hover:bg-muted/10'}
+          ${dragActive ? 'bg-primary/10 border-primary/40 scale-[1.02]' : 'bg-muted/5 border-border/40 group-hover:border-primary/30 group-hover:bg-muted/10'}
           ${loading ? 'opacity-50 grayscale' : ''}
         `}>
           {loading ? (
             <div className="flex flex-col items-center gap-4">
-              <div className="w-10 h-10 border-4 border-accent/20 border-t-accent rounded-full animate-spin" />
-              <p className="text-sm font-bold tracking-widest uppercase text-accent animate-pulse">Processing Menu...</p>
+              <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+              <p className="text-sm font-bold tracking-widest uppercase text-primary animate-pulse">Processing Menu...</p>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="mb-4 flex justify-center">
-                <CloudUploadIcon size={56} className="text-accent" />
+                <CloudUploadIcon size={56} className="text-primary" />
               </div>
               <div>
                 <p className="text-base font-semibold">Drop your Excel file here</p>
