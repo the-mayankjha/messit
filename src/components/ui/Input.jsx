@@ -16,9 +16,9 @@ const Input = forwardRef(({ className, type, icon: Icon, label, ...props }, ref)
         <input
           type={type}
           className={cn(
-            "flex w-full rounded-2xl border border-border/40 bg-secondary/15 px-5 py-4 text-sm transition-all shadow-inner",
+            "flex w-full rounded-2xl border border-border/60 bg-background px-5 py-4 text-sm text-foreground transition-all shadow-sm",
             "file:border-0 file:bg-transparent file:text-sm file:font-medium",
-            "placeholder:text-muted-foreground/30",
+            "placeholder:text-muted-foreground/50",
             "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 focus-visible:border-primary/20",
             "disabled:cursor-not-allowed disabled:opacity-50",
             "selection:bg-primary/30 selection:text-foreground",

@@ -185,7 +185,7 @@ export default function Dashboard() {
                       }`}
                       style={{ 
                         backgroundColor: meal.status === 'Ongoing' ? accentHex : meal.status === 'Upcoming' ? `${accentHex}30` : undefined,
-                        color: meal.status === 'Done' ? undefined : '#fff' 
+                        color: meal.status === 'Done' ? undefined : (effectiveTheme === 'light' ? '#000' : '#fff') 
                       }}
                     >
                       {meal.status}

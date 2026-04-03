@@ -395,13 +395,21 @@ export default function Settings() {
                       >
                         <div 
                           className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-all duration-300 ${
-                            isSelected ? 'scale-110 shadow-lg ring-2 ring-primary/40 ring-offset-2 ring-offset-background' : 'scale-100 hover:scale-105'
+                            isSelected ? 'scale-110 shadow-lg ring-4 ring-offset-2 ring-offset-background' : 'scale-100 hover:scale-105'
                           }`}
-                          style={{ backgroundColor: displayColor }}
+                          style={{ 
+                            backgroundColor: displayColor,
+                            ringColor: isSelected ? `${displayColor}40` : undefined,
+                            '--tw-ring-color': isSelected ? displayColor : 'transparent'
+                          }}
                         />
                         {isSelected && (
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <Check size={16} className="text-white drop-shadow-md" />
+                            <Check 
+                              size={20} 
+                              strokeWidth={3.5} 
+                              className={`${(name === 'Default' && (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches))) ? 'text-black' : 'text-white'} drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]`} 
+                            />
                           </div>
                         )}
                       </button>

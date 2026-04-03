@@ -6,7 +6,7 @@ export const useStore = create(
     (set) => ({
       // Settings
       theme: 'system', // 'light', 'dark', 'system'
-      accentColor: 'Blue', // Catppuccin Accents
+      accentColor: 'Default', // Catppuccin Accents
       notificationMode: 'stud', // 'stud', 'princess'
       
       setTheme: (theme) => set({ theme }),
