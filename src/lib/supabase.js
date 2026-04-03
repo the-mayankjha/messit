@@ -285,3 +285,41 @@ export async function getUserCoordinatorRequest(email) {
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * Fetch all users with a privileged role (Admin, Developer, Coordinator)
+ */
+export async function getPrivilegedUsers() {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('role', ['Admin', 'Developer', 'Coordinator'])
+      .order('role', { ascending: true });
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (err) {
+    console.error('Fetch Privileged Users Error:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Revoke a user's privileged role and reset it to 'None'
+ * @param {string} email - The user's email
+ */
+export async function revokeUserRole(email) {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role: 'None' })
+      .eq('email', email);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (err) {
+    console.error('Revoke Role Error:', err.message);
+    return { success: false, error: err.message };
+  }
+}

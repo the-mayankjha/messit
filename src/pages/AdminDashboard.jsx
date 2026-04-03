@@ -3,7 +3,9 @@ import {
   AlertCircle, Check, RefreshCw, Cloud, Database, 
   Sparkles, ShieldCheck, ChevronRight, UserCheck, 
   UserX, Megaphone, FlaskConical, Send, History,
-  LayoutDashboard, Users, Zap, BellRing, Settings2
+  LayoutDashboard, Users, Zap, BellRing, Settings2,
+  Crown, Code2, Handshake, AlertTriangle, Trash2, X,
+  ShieldAlert, ShieldOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store/useStore';
@@ -14,7 +16,7 @@ import { Input } from '../components/ui/Input';
 import { 
   getPendingRequests, updateRequestStatus, 
   uploadMessMenu, createAnnouncement,
-  supabase 
+  supabase, getPrivilegedUsers, revokeUserRole
 } from '../lib/supabase';
 import { parseExcelMenu } from '../utils/excelParser';
 import { requestNotificationPermission, sendNotification } from '../utils/notifier';
@@ -33,6 +35,10 @@ export default function AdminDashboard() {
 
   // Identity Desk State
   const [requests, setRequests] = useState([]);
+  const [privilegedUsers, setPrivilegedUsers] = useState([]);
+  const [rosterLoading, setRosterLoading] = useState(false);
+  const [warnTarget, setWarnTarget] = useState(null);   // { email, name, role }
+  const [revokeTarget, setRevokeTarget] = useState(null); // { email, name, role }
   
   // Mess Ops State
   const [dragActive, setDragActive] = useState(false);
@@ -57,6 +63,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (activeTab === 'identity' && role === 'Admin') {
       fetchRequests();
+      fetchRoster();
     }
   }, [activeTab]);
 
@@ -73,6 +80,27 @@ export default function AdminDashboard() {
     const res = await getPendingRequests();
     if (res.success) setRequests(res.data);
     setLoading(false);
+  };
+
+  const fetchRoster = async () => {
+    setRosterLoading(true);
+    const res = await getPrivilegedUsers();
+    if (res.success) setPrivilegedUsers(res.data);
+    setRosterLoading(false);
+  };
+
+  const handleRevoke = async () => {
+    if (!revokeTarget) return;
+    const res = await revokeUserRole(revokeTarget.email);
+    if (res.success) {
+      setPrivilegedUsers(prev => prev.filter(u => u.email !== revokeTarget.email));
+      setSuccess(`${revokeTarget.name}'s access has been revoked.`);
+      setTimeout(() => setSuccess(null), 3000);
+    } else {
+      setError('Failed to revoke access.');
+      setTimeout(() => setError(null), 3000);
+    }
+    setRevokeTarget(null);
   };
 
   const handleRequestAction = async (requestId, email, status) => {
@@ -158,7 +186,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex p-1.5 bg-muted/10 backdrop-blur-xl rounded-[2rem] border border-border/20 mb-6 sm:mb-12 gap-1 overflow-x-auto no-scrollbar pointer-events-auto">
+      <div className="flex p-1.5 bg-muted/10 backdrop-blur-xl rounded-[2rem] border border-border/20 mb-6 sm:mb-12 gap-1 overflow-hidden pointer-events-auto">
         {adminTabs.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -166,7 +194,7 @@ export default function AdminDashboard() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 min-w-[110px] sm:min-w-[130px] flex items-center justify-center gap-2 py-2.5 sm:py-4 rounded-[1.5rem] sm:rounded-[1.8rem] font-bold text-[10px] sm:text-sm transition-all duration-300 relative ${
+              className={`flex-1 flex items-center justify-center gap-1.5 px-3 sm:px-5 py-2.5 sm:py-3.5 rounded-[1.5rem] sm:rounded-[1.8rem] font-bold text-[10px] sm:text-xs transition-all duration-300 relative ${
                 isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground/80'
               }`}
             >
@@ -208,29 +236,31 @@ export default function AdminDashboard() {
 
           {/* IDENTITY DESK (ADMIN) */}
           {activeTab === 'identity' && (
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 gap-10">
+
+              {/* SECTION 1 — Pending Petitions */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between mb-2 px-2">
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/50">Pending Petitions</h3>
-                  <div className="h-px flex-1 mx-6 bg-border/20" />
-                  <span className="text-[10px] font-black text-primary/60">{requests.length} REQUESTS</span>
+                <div className="flex items-center gap-4 px-1">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/50 whitespace-nowrap">Pending Petitions</h3>
+                  <div className="h-px flex-1 bg-border/20" />
+                  <span className="text-[10px] font-black text-primary/60 whitespace-nowrap">{requests.length} REQUESTS</span>
                 </div>
 
                 {loading ? (
-                  <div className="py-20 flex flex-col items-center gap-4 text-muted-foreground/20">
-                    <RefreshCw size={48} className="animate-spin" />
+                  <div className="py-16 flex flex-col items-center gap-4 text-muted-foreground/20">
+                    <RefreshCw size={40} className="animate-spin" />
                     <p className="text-[10px] font-black uppercase tracking-[0.3em]">Querying Vault...</p>
                   </div>
                 ) : requests.length === 0 ? (
                   <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="py-20 text-center rounded-[2.5rem] border-2 border-dashed border-border/10 bg-muted/5 flex flex-col items-center gap-4"
+                    className="py-10 text-center rounded-[2rem] border-2 border-dashed border-border/10 bg-muted/5 flex flex-col items-center gap-3"
                   >
-                    <div className="w-16 h-16 rounded-full bg-muted/10 flex items-center justify-center text-muted-foreground/20">
-                      <ShieldCheck size={32} />
+                    <div className="w-12 h-12 rounded-full bg-muted/10 flex items-center justify-center text-muted-foreground/20">
+                      <ShieldCheck size={24} />
                     </div>
-                    <p className="text-sm font-bold text-muted-foreground/40 uppercase tracking-widest">Protocol Secure. No Pending Requests.</p>
+                    <p className="text-xs font-bold text-muted-foreground/30 uppercase tracking-widest">Protocol Secure. No Pending Requests.</p>
                   </motion.div>
                 ) : (
                   <div className="grid grid-cols-1 gap-4">
@@ -243,7 +273,6 @@ export default function AdminDashboard() {
                         className="p-6 rounded-[2.2rem] bg-secondary/10 border border-border/40 flex flex-col sm:flex-row items-center justify-between gap-6 hover:bg-secondary/20 transition-all group relative overflow-hidden backdrop-blur-sm"
                       >
                         <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary/60 transition-all" />
-                        
                         <div className="flex items-center gap-5 w-full sm:w-auto">
                           <div className="w-14 h-14 rounded-2xl bg-background border border-border/40 flex items-center justify-center text-primary shadow-2xl group-hover:scale-105 transition-transform duration-500 relative">
                              <Users size={24} />
@@ -262,7 +291,6 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                         </div>
-
                         <div className="flex items-center gap-3 w-full sm:w-auto">
                           <button 
                             onClick={() => handleRequestAction(req.id, req.user_email, 'rejected')}
@@ -283,6 +311,210 @@ export default function AdminDashboard() {
                   </div>
                 )}
               </div>
+
+              {/* SECTION 2 — Active Roster */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 px-1">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/50 whitespace-nowrap">Active Roster</h3>
+                  <div className="h-px flex-1 bg-border/20" />
+                  <span className="text-[10px] font-black text-primary/60 whitespace-nowrap">{privilegedUsers.length} MEMBERS</span>
+                </div>
+
+                {rosterLoading ? (
+                  <div className="py-12 flex flex-col items-center gap-4 text-muted-foreground/20">
+                    <RefreshCw size={36} className="animate-spin" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Loading Roster...</p>
+                  </div>
+                ) : privilegedUsers.length === 0 ? (
+                  <div className="py-10 text-center rounded-[2rem] border-2 border-dashed border-border/10 bg-muted/5">
+                    <p className="text-xs font-bold text-muted-foreground/30 uppercase tracking-widest">No privileged users found.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    {privilegedUsers.map((u, i) => {
+                      const roleConfig = {
+                        Admin:       { icon: Crown,      color: 'text-amber-400',   bg: 'bg-amber-400/10',   border: 'border-amber-400/20'   },
+                        Developer:   { icon: Code2,      color: 'text-blue-400',    bg: 'bg-blue-400/10',    border: 'border-blue-400/20'    },
+                        Coordinator: { icon: Handshake,  color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/20' },
+                      }[u.role] || { icon: Users, color: 'text-muted-foreground', bg: 'bg-muted/10', border: 'border-border/20' };
+                      const RoleIcon = roleConfig.icon;
+                      const isSelf = u.email === user?.email;
+
+                      return (
+                        <motion.div
+                          key={u.email}
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.06 }}
+                          className="flex items-center gap-4 p-4 sm:p-5 rounded-[1.8rem] bg-secondary/10 border border-border/30 hover:bg-secondary/20 transition-all group relative overflow-hidden"
+                        >
+                          {/* Role stripe */}
+                          <div className={`absolute top-0 left-0 w-1 h-full rounded-l-[1.8rem] ${roleConfig.color.replace('text-', 'bg-')}/40 group-hover:${roleConfig.color.replace('text-', 'bg-')} transition-all`} />
+
+                          {/* Avatar */}
+                          <div className={`w-11 h-11 rounded-xl ${roleConfig.bg} border ${roleConfig.border} flex items-center justify-center flex-shrink-0 shadow-lg`}>
+                            <RoleIcon size={20} className={roleConfig.color} />
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-sm truncate">{u.name || 'Unknown'}</span>
+                              {isSelf && (
+                                <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">YOU</span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground/60 truncate">{u.email}</p>
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${roleConfig.bg} ${roleConfig.color} ${roleConfig.border}`}>
+                                {u.role}
+                              </span>
+                              {u.hostel && (
+                                <span className="text-[9px] font-bold text-muted-foreground/40 uppercase">{u.hostel}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Actions — hidden for self */}
+                          {!isSelf && (
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <button
+                                onClick={() => setWarnTarget({ email: u.email, name: u.name || u.email, role: u.role })}
+                                title="Issue Warning"
+                                className="p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/10 text-amber-400/50 hover:text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/30 transition-all active:scale-90"
+                              >
+                                <ShieldAlert size={16} />
+                              </button>
+                              <button
+                                onClick={() => setRevokeTarget({ email: u.email, name: u.name || u.email, role: u.role })}
+                                title="Revoke Access"
+                                className="p-2.5 rounded-xl bg-red-500/5 border border-red-500/10 text-red-400/50 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/30 transition-all active:scale-90"
+                              >
+                                <ShieldOff size={16} />
+                              </button>
+                            </div>
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* WARN MODAL */}
+              <AnimatePresence>
+                {warnTarget && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-4"
+                    onClick={() => setWarnTarget(null)}
+                  >
+                    <motion.div
+                      initial={{ scale: 0.92, y: 20 }}
+                      animate={{ scale: 1, y: 0 }}
+                      exit={{ scale: 0.92, y: 20 }}
+                      onClick={e => e.stopPropagation()}
+                      className="w-full max-w-sm bg-card border border-border/60 rounded-[2rem] p-8 shadow-2xl space-y-6"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                          <AlertTriangle size={22} className="text-amber-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-black text-base tracking-tight">Issue Warning</h4>
+                          <p className="text-xs text-muted-foreground">{warnTarget.name}</p>
+                        </div>
+                        <button onClick={() => setWarnTarget(null)} className="ml-auto p-2 rounded-xl hover:bg-muted/30 text-muted-foreground transition-all">
+                          <X size={16} />
+                        </button>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
+                        <p className="text-xs text-amber-400/80 font-medium leading-relaxed">
+                          A formal warning will be recorded against <span className="font-black">{warnTarget.name}</span>. Their access isn't revoked yet — this serves as an official notice.
+                        </p>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setWarnTarget(null)}
+                          className="flex-1 py-3 rounded-2xl border border-border/40 text-muted-foreground text-xs font-bold uppercase tracking-widest hover:bg-muted/20 transition-all"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSuccess(`Warning issued to ${warnTarget.name}.`);
+                            setTimeout(() => setSuccess(null), 3000);
+                            setWarnTarget(null);
+                          }}
+                          className="flex-1 py-3 rounded-2xl bg-amber-500 text-white text-xs font-black uppercase tracking-widest hover:bg-amber-600 active:scale-95 transition-all shadow-xl shadow-amber-500/20"
+                        >
+                          Issue Warning
+                        </button>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* REVOKE MODAL */}
+              <AnimatePresence>
+                {revokeTarget && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md p-4"
+                    onClick={() => setRevokeTarget(null)}
+                  >
+                    <motion.div
+                      initial={{ scale: 0.92, y: 20 }}
+                      animate={{ scale: 1, y: 0 }}
+                      exit={{ scale: 0.92, y: 20 }}
+                      onClick={e => e.stopPropagation()}
+                      className="w-full max-w-sm bg-card border border-red-500/20 rounded-[2rem] p-8 shadow-2xl space-y-6"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                          <ShieldOff size={22} className="text-red-400" />
+                        </div>
+                        <div>
+                          <h4 className="font-black text-base tracking-tight">Revoke Access</h4>
+                          <p className="text-xs text-muted-foreground">{revokeTarget.name} &middot; {revokeTarget.role}</p>
+                        </div>
+                        <button onClick={() => setRevokeTarget(null)} className="ml-auto p-2 rounded-xl hover:bg-muted/30 text-muted-foreground transition-all">
+                          <X size={16} />
+                        </button>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10">
+                        <p className="text-xs text-red-400/80 font-medium leading-relaxed">
+                          This will permanently remove <span className="font-black">{revokeTarget.name}</span>'s <span className="font-black">{revokeTarget.role}</span> role and reset them to a standard user. This action cannot be undone automatically.
+                        </p>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setRevokeTarget(null)}
+                          className="flex-1 py-3 rounded-2xl border border-border/40 text-muted-foreground text-xs font-bold uppercase tracking-widest hover:bg-muted/20 transition-all"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleRevoke}
+                          className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-xs font-black uppercase tracking-widest hover:bg-red-600 active:scale-95 transition-all shadow-xl shadow-red-500/20"
+                        >
+                          Revoke Access
+                        </button>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
             </div>
           )}
 
