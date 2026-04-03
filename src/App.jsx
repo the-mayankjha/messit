@@ -25,6 +25,7 @@ export default function App() {
     isOnboarded,
     setIsOnboarded,
     setUser,
+    setProfile,
     hostel, // Track profile completion
     notifications, 
     setDrawerOpen
@@ -38,6 +39,7 @@ export default function App() {
   
   // Page State
   const [currentPage, setCurrentPage] = useState(menuData ? 'dashboard' : 'upload');
+  const [isSyncingProfile, setIsSyncingProfile] = useState(false);
   
   // Refs for animations
   const bellRef = useRef(null);
@@ -48,20 +50,44 @@ export default function App() {
   const mobileUploadIconRef = useRef(null);
   const mobileSearchIconRef = useRef(null);
 
-  // Sync Auth0 User with Store
+  // Sync Auth0 User with Store + Fetch Supabase Profile
   useEffect(() => {
-    if (isAuthenticated && auth0User) {
-      setUser({
-        name: auth0User.name,
-        email: auth0User.email,
-        picture: auth0User.picture
-      });
+    const syncUserAndProfile = async () => {
+      if (isAuthenticated && auth0User) {
+        setIsSyncingProfile(true);
+        setUser({
+          name: auth0User.name,
+          email: auth0User.email,
+          picture: auth0User.picture
+        });
 
-      if (!hostel) {
-        setIsOnboarded(false);
+        // 🚀 SMART ONBOARDING SKIP:
+        // If we don't have a hostel locally, check Supabase.
+        if (!hostel) {
+          try {
+            const { getSupabaseProfile } = await import('./lib/supabase');
+            const { success, data } = await getSupabaseProfile(auth0User.email);
+            
+            if (success && data && data.hostel) {
+              setProfile(data);
+              setIsOnboarded(true);
+            } else {
+              setIsOnboarded(false);
+            }
+          } catch (err) {
+            console.error("Profile sync error:", err);
+            setIsOnboarded(false);
+          }
+        } else {
+          // If we have it locally, we're definitely onboarded
+          setIsOnboarded(true);
+        }
+        setIsSyncingProfile(false);
       }
-    }
-  }, [isAuthenticated, auth0User, setUser, hostel, setIsOnboarded]);
+    };
+
+    syncUserAndProfile();
+  }, [isAuthenticated, auth0User, setUser, hostel, setIsOnboarded, setProfile]);
 
   // Sync current page with menuData availability
   useEffect(() => {
@@ -129,13 +155,17 @@ export default function App() {
 
   const needsOnboarding = isAuthenticated ? !hostel : !isOnboarded;
 
-  if (isLoading) {
+  if (isLoading || isSyncingProfile) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 space-y-6 text-center">
         <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
         <div>
-          <p className="text-xs font-bold tracking-widest uppercase text-primary animate-pulse">Initializing Identity...</p>
-          <p className="text-[10px] text-muted-foreground mt-2">Checking secure tunnel to Auth0</p>
+          <p className="text-xs font-bold tracking-widest uppercase text-primary animate-pulse">
+            {isLoading ? 'Initializing Identity...' : 'Syncing Profile...'}
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-2">
+            {isLoading ? 'Checking secure tunnel to Auth0' : 'Fetching your preferences from the cloud'}
+          </p>
         </div>
       </div>
     );

@@ -34,3 +34,33 @@ export async function syncSupabaseProfile(profileData) {
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * Fetch user profile from Supabase by email.
+ */
+export async function getSupabaseProfile(email) {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return { success: true, data: null }; // Not found
+      throw error;
+    }
+
+    // Map snake_case to camelCase
+    const mappedData = {
+      ...data,
+      roomNumber: data.room_number,
+      messType: data.mess_type,
+    };
+
+    return { success: true, data: mappedData };
+  } catch (err) {
+    console.error("Supabase Fetch Error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
