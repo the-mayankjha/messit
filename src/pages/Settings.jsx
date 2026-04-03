@@ -286,34 +286,63 @@ export default function Settings() {
                  </div>
                  <p className="text-[10px] text-muted-foreground mt-3 italic text-center sm:text-left">Your role is set during onboarding and cannot be changed without administrator approval.</p>
 
-                 {/* Coordinator Request Flow */}
+                 {/* Coordinator Request Flow: Optimized for High-Density Visibility */}
                  {(role === 'None' || !role) && (
-                   <div className="mt-4 p-4 rounded-2xl bg-secondary/20 border border-dashed border-border/60">
-                     <div className="flex items-start justify-between gap-4">
-                       <div className="min-w-0">
-                         <h4 className="text-xs font-bold uppercase tracking-widest text-foreground mb-1">Administrative Authority</h4>
-                         <p className="text-[10px] text-muted-foreground leading-relaxed">
-                           Want to help manage the hostel mess? Request to become a <strong>Coordinator</strong>.
-                         </p>
-                       </div>
-                       {coordinatorRequest ? (
-                         <div className={`px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${
-                           coordinatorRequest.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
-                           coordinatorRequest.status === 'rejected' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
-                           'bg-green-500/10 text-green-500 border-green-500/20'
-                         }`}>
-                           {coordinatorRequest.status}
+                   <div className="mt-8 overflow-hidden rounded-[2.5rem] border border-border/40 bg-muted/15 shadow-2xl shadow-primary/5">
+                     <div className="p-6 sm:p-8">
+                       <div className="flex flex-col gap-8">
+                         <div className="space-y-2">
+                           <div className="flex items-center gap-3">
+                             <div 
+                               className="w-2.5 h-2.5 rounded-full animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.2)]" 
+                               style={{ backgroundColor: coordinatorRequest?.status === 'pending' ? '#eab308' : (coordinatorRequest?.status === 'rejected' ? '#ef4444' : accentHex) }}
+                             />
+                             <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/90">Administrative Authority</h4>
+                           </div>
+                           <p className="text-xs sm:text-sm text-balance text-muted-foreground leading-relaxed">
+                             Request high-level clearance to manage mess menus and global broadcasts. Your petition undergoes an automated security audit.
+                           </p>
                          </div>
-                       ) : (
-                         <Button 
-                           onClick={handleRequestCoordinator}
-                           disabled={isRequesting}
-                           variant="outline" 
-                           className="h-8 px-4 rounded-xl text-[9px] font-bold uppercase tracking-widest hover:bg-primary/10 border-primary/20 hover:border-primary/40 text-primary transition-all active:scale-95 flex-shrink-0"
-                         >
-                           {isRequesting ? <RefreshCw className="animate-spin w-3 h-3" /> : 'Request Access'}
-                         </Button>
-                       )}
+
+                         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                           {coordinatorRequest && coordinatorRequest.status !== 'rejected' ? (
+                             <div 
+                               className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border backdrop-blur-xl flex items-center gap-3 shadow-sm ${
+                                 coordinatorRequest.status === 'pending' 
+                                   ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' 
+                                   : 'bg-green-500/10 text-green-500 border-green-500/20'
+                               }`}
+                             >
+                               {coordinatorRequest.status === 'pending' && <RefreshCw size={14} className="animate-spin" />}
+                               {coordinatorRequest.status}
+                             </div>
+                           ) : (
+                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+                               <Button 
+                                 onClick={handleRequestCoordinator}
+                                 disabled={isRequesting}
+                                 className="h-12 px-8 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] shadow-xl shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-3 w-full sm:w-auto"
+                               >
+                                 {isRequesting ? (
+                                   <RefreshCw className="animate-spin w-4 h-4" />
+                                 ) : (
+                                   <>
+                                     <Crown size={18} />
+                                     <span>{coordinatorRequest?.status === 'rejected' ? 'Restart Protocol' : 'Initiate Protocol'}</span>
+                                   </>
+                                 )}
+                               </Button>
+                             </div>
+                           )}
+                         </div>
+                       </div>
+                     </div>
+                     
+                     {/* Information Disclaimer Footer */}
+                     <div className="px-8 py-4 bg-muted/30 border-t border-border/40 backdrop-blur-md">
+                       <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.25em] text-center sm:text-left">
+                         Verification required via high council audit channel
+                       </p>
                      </div>
                    </div>
                  )}

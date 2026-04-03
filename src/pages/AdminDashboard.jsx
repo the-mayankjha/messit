@@ -61,26 +61,10 @@ export default function AdminDashboard() {
   }, [activeTab]);
 
   useEffect(() => {
+    // Listen for real-time coordinator requests from App.jsx
     if (role === 'Admin') {
-      const channel = supabase
-        .channel('admin-coordinator-requests')
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'coordinator_requests' },
-          (payload) => {
-            fetchRequests();
-            addNotification(
-              "New Security Petition 🛡️",
-              `Student ${payload.new.user_name} is requesting Coordinator access. Review required in Identity Desk.`
-            );
-            setNotificationPending(true);
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
+      window.addEventListener('new-coordinator-request', fetchRequests);
+      return () => window.removeEventListener('new-coordinator-request', fetchRequests);
     }
   }, [role]);
 

@@ -46,7 +46,8 @@ export default function App() {
     setSyncStatus,
     setMenuData,
     cloudMenuInfo,
-    setCloudMenuInfo
+    setCloudMenuInfo,
+    addNotification
   } = useStore();
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -173,47 +174,57 @@ export default function App() {
     if (!isLoading) syncCloudMenu();
   }, [isAuthenticated, isLoading, hostel, messType, setMenuData, setSyncStatus, isSyncing, syncStatus, setCloudMenuInfo]);
 
-  // 🔔 HIGH-DENSITY REALTIME BROADCASTS
+  // 🔔 HIGH-DENSITY REALTIME BROADCASTS & ADMIN ALERTS
   useEffect(() => {
-    let channel = null;
+    let announcementChannel = null;
+    let requestChannel = null;
 
-    const initRealtime = async () => {
+    const setupRealtime = async () => {
       const { supabase } = await import('./lib/supabase');
       
-      // Use a unique channel name to avoid subscription conflicts
-      channel = supabase.channel(`announcements-${Date.now()}`);
-
-      channel
+      // 1. Global Announcements (For Everyone)
+      announcementChannel = supabase.channel(`announcements-${Date.now()}`);
+      announcementChannel
         .on(
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'announcements' },
           (payload) => {
-            sendNotification(
-              null, 
-              notificationMode, 
-              `📢 ${payload.new.title}`, 
-              payload.new.content
-            );
+            sendNotification(null, notificationMode, `📢 ${payload.new.title}`, payload.new.content);
             window.dispatchEvent(new CustomEvent('new-announcement'));
           }
         )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            console.log("[Realtime] Connected to Global Announcements");
-          }
-        });
-    };
+        .subscribe();
 
-    initRealtime();
-
-    return () => {
-      if (channel) {
-        import('./lib/supabase').then(({ supabase }) => {
-          supabase.removeChannel(channel);
-        });
+      // 2. Admin Security Alerts (Only for Admins)
+      if (role === 'Admin') {
+        requestChannel = supabase.channel(`admin-alerts-${Date.now()}`);
+        requestChannel
+          .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'coordinator_requests' },
+            (payload) => {
+              addNotification(
+                "New Security Petition 🛡️",
+                `Student ${payload.new.user_name} is requesting Coordinator access. Review required.`
+              );
+              setNotificationPending(true);
+              // Dispatch event for AdminDashboard to re-fetch if open
+              window.dispatchEvent(new CustomEvent('new-coordinator-request'));
+            }
+          )
+          .subscribe();
       }
     };
-  }, [notificationMode]);
+
+    setupRealtime();
+
+    return () => {
+      import('./lib/supabase').then(({ supabase }) => {
+        if (announcementChannel) supabase.removeChannel(announcementChannel);
+        if (requestChannel) supabase.removeChannel(requestChannel);
+      });
+    };
+  }, [notificationMode, role, addNotification, setNotificationPending]);
 
   // Apply Theme
   useEffect(() => {
