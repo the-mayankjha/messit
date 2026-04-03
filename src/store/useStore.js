@@ -6,9 +6,11 @@ export const useStore = create(
     (set) => ({
       // Settings
       theme: 'system', // 'light', 'dark', 'system'
+      accentColor: 'Blue', // Catppuccin Accents
       notificationMode: 'stud', // 'stud', 'princess'
       
       setTheme: (theme) => set({ theme }),
+      setAccentColor: (accentColor) => set({ accentColor }),
       setNotificationMode: (notificationMode) => set({ notificationMode }),
 
       // Onboarding & Auth

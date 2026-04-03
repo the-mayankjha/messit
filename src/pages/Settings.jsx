@@ -7,7 +7,7 @@ import { Input } from '../components/ui/Input';
 import { 
   Moon, Sun, Check, Crown, Dumbbell, Bell, 
   User, Mail, Building, Key, ShieldCheck,
-  ShieldAlert, RefreshCw, Save, UserX
+  ShieldAlert, RefreshCw, Save, UserX, Lock
 } from 'lucide-react';
 import { GoogleIcon } from '../components/ui/icons/GoogleIcon';
 import { GithubIcon } from '../components/ui/icons/GithubIcon';
@@ -15,10 +15,21 @@ import { BellRingIcon } from '../components/ui/icons/BellRingIcon';
 import { useAuth0 } from '@auth0/auth0-react';
 import { requestNotificationPermission, sendNotification } from '../utils/notifier';
 
+const ACCENT_COLORS = {
+  Blue: { light: '#1e66f5', dark: '#8aadf4' },
+  Green: { light: '#40a02b', dark: '#a6da95' },
+  Orange: { light: '#fe640b', dark: '#f5a97f' },
+  Yellow: { light: '#df8e1d', dark: '#eed49f' },
+  Purple: { light: '#8839ef', dark: '#c6a0f6' },
+  Red: { light: '#d20f39', dark: '#ed8796' },
+  Pink: { light: '#ea76cb', dark: '#f5bde6' },
+};
+
 export default function Settings() {
   const { logout, user: auth0User, isAuthenticated } = useAuth0();
   const { 
     theme, setTheme, 
+    accentColor, setAccentColor,
     notificationMode, setNotificationMode,
     user, setUser,
     hostel, setProfile,
@@ -351,6 +362,41 @@ export default function Settings() {
                   )
                 })}
               </div>
+
+              {/* Catppuccin Accent Selector */}
+              <div className="pt-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-4 ml-1">Accent Color</p>
+                <div className="flex flex-wrap gap-3 px-1">
+                  {Object.entries(ACCENT_COLORS).map(([name, hexes]) => {
+                    const isSelected = accentColor === name;
+                    // Determine effective color based on current theme
+                    // If theme is 'system', we'd need to know actual theme. 
+                    // For simplicity, we'll use theme state, and if 'system', default to dark since Messit is elite dark by default.
+                    const displayColor = (theme === 'light') ? hexes.light : hexes.dark;
+                    
+                    return (
+                      <button
+                        key={name}
+                        onClick={() => setAccentColor(name)}
+                        className="relative group transition-all active:scale-90"
+                        title={name}
+                      >
+                        <div 
+                          className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full transition-all duration-300 ${
+                            isSelected ? 'scale-110 shadow-lg ring-2 ring-primary/40 ring-offset-2 ring-offset-background' : 'scale-100 hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: displayColor }}
+                        />
+                        {isSelected && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <Check size={16} className="text-white drop-shadow-md" />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -365,58 +411,74 @@ export default function Settings() {
                 <BellRingIcon size={22} className="text-muted-foreground/50" />
               </div>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Notification Style</p>
-                <div className="space-y-3">
-                  
-                  {/* Stud Mode Card */}
-                  <button
-                    onClick={() => setNotificationMode('stud')}
-                    className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-300 group ${
-                      notificationMode === 'stud' 
-                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/5' 
-                        : 'border-border/40 hover:border-primary/20 bg-muted/20 hover:bg-muted/30'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className={`p-2 rounded-xl transition-colors ${notificationMode === 'stud' ? 'bg-muted/40 text-foreground' : 'bg-muted/40 text-muted-foreground group-hover:text-primary/60'}`}>
-                        <Dumbbell size={20} />
-                      </div>
-                      <h4 className="font-bold text-lg text-foreground">Stud Mode</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground pl-11 leading-relaxed opacity-80 italic">
-                      "Yo Bro, Fuel Up! Grab your protein..."
-                    </p>
-                  </button>
+            <CardContent className="space-y-6 pt-6 relative group/notif">
+              {/* Guest Lock Overlay */}
+              {loginProvider === 'Guest' && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="absolute inset-0 z-20 backdrop-blur-[2px] bg-background/60 flex flex-col items-center justify-center rounded-3xl p-6 text-center border border-border/20 m-1"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-secondary/50 border border-border/50 flex items-center justify-center mb-4 shadow-xl">
+                    <Lock size={24} className="text-primary" />
+                  </div>
+                  <h4 className="font-bold text-sm text-white mb-1">Notifications Locked</h4>
+                  <p className="text-[10px] text-muted-foreground max-w-[180px]">Please sign in to configure your personalized meal reminders.</p>
+                </motion.div>
+              )}
 
-                  {/* Princess Mode Card */}
-                  <button
-                    onClick={() => setNotificationMode('princess')}
-                    className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-300 group ${
-                      notificationMode === 'princess' 
-                        ? 'border-primary bg-primary/5 shadow-lg shadow-primary/5' 
-                        : 'border-border/40 hover:border-primary/20 bg-muted/20 hover:bg-muted/30'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className={`p-2 rounded-xl transition-colors ${notificationMode === 'princess' ? 'bg-muted/40 text-foreground' : 'bg-muted/40 text-muted-foreground group-hover:text-primary/60'}`}>
-                        <Crown size={20} />
+              <div className={loginProvider === 'Guest' ? 'pointer-events-none opacity-40 grayscale-[0.5]' : ''}>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">Notification Style</p>
+                  <div className="space-y-3">
+                    
+                    {/* Stud Mode Card */}
+                    <button
+                      onClick={() => setNotificationMode('stud')}
+                      className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-300 group ${
+                        notificationMode === 'stud' 
+                          ? 'border-primary bg-primary/5 shadow-lg shadow-primary/5' 
+                          : 'border-border/40 hover:border-primary/20 bg-muted/20 hover:bg-muted/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={`p-2 rounded-xl transition-colors ${notificationMode === 'stud' ? 'bg-muted/40 text-foreground' : 'bg-muted/40 text-muted-foreground group-hover:text-primary/60'}`}>
+                          <Dumbbell size={20} />
+                        </div>
+                        <h4 className="font-bold text-lg text-foreground">Stud Mode</h4>
                       </div>
-                      <h4 className="font-bold text-lg text-foreground">Princess Mode</h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground pl-11 leading-relaxed opacity-80 italic">
-                      "Your Meal Awaits, Princess. Time for a delicious..."
-                    </p>
-                  </button>
+                      <p className="text-sm text-muted-foreground pl-11 leading-relaxed opacity-80 italic">
+                        "Yo Bro, Fuel Up! Grab your protein..."
+                      </p>
+                    </button>
 
+                    {/* Princess Mode Card */}
+                    <button
+                      onClick={() => setNotificationMode('princess')}
+                      className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-300 group ${
+                        notificationMode === 'princess' 
+                          ? 'border-primary bg-primary/5 shadow-lg shadow-primary/5' 
+                          : 'border-border/40 hover:border-primary/20 bg-muted/20 hover:bg-muted/30'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={`p-2 rounded-xl transition-colors ${notificationMode === 'princess' ? 'bg-muted/40 text-foreground' : 'bg-muted/40 text-muted-foreground group-hover:text-primary/60'}`}>
+                          <Crown size={20} />
+                        </div>
+                        <h4 className="font-bold text-lg text-foreground">Princess Mode</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground pl-11 leading-relaxed opacity-80 italic">
+                        "Your Meal Awaits, Princess. Time for a delicious..."
+                      </p>
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <div className="pt-4 border-t border-border/40">
-                <Button onClick={handleTestNotification} variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-widest hover:text-primary transition-all">
-                   Fire Test Alert
-                </Button>
+                <div className="pt-4 border-t border-border/40">
+                  <Button onClick={handleTestNotification} variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-widest hover:text-primary transition-all">
+                    Fire Test Alert
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

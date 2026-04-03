@@ -28,7 +28,9 @@ export default function Onboarding() {
   } = useStore();
   
   // 0: Welcome | 1: Hostel | 2: Mess & Room | 3: Finalizing
+  // 0: Welcome | 1: Hostel | 2: Mess & Room | 3: Finalizing
   const [step, setStep] = useState(0);
+  const [authMode, setAuthMode] = useState('welcome'); // 'welcome' | 'auth'
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -122,99 +124,174 @@ export default function Onboarding() {
         {/* STEP 0: WELCOME & AUTH */}
         {step === 0 && (
           <motion.div
-            key="welcome"
+            key="step0"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="max-w-md w-full py-12 relative z-10"
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="max-w-md w-full relative z-10"
           >
-            <div className="text-center mb-16 px-4">
-              <h1 className="text-4xl font-black tracking-tight mb-2 text-white">Messit</h1>
-              <p className="text-muted-foreground/60 text-sm font-medium">Your elite dining companion.</p>
-            </div>
-
-            <div className="space-y-8 px-2">
-              
-              {/* Social Auth Row (Notion Style) */}
-              <div className="grid grid-cols-2 gap-4">
-                <button 
-                  onClick={() => handleSocialAuth('google-oauth2')}
-                  onMouseEnter={() => googleIconRef.current?.startAnimation()}
-                  onMouseLeave={() => googleIconRef.current?.stopAnimation()}
-                  className="flex items-center justify-center gap-3 bg-secondary/30 hover:bg-secondary/50 border border-border/50 py-4 rounded-xl transition-all active:scale-95 group"
+            <AnimatePresence mode="wait">
+              {authMode === 'welcome' ? (
+                <motion.div
+                  key="welcome_view"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.1 }}
+                  className="flex flex-col items-center py-12"
                 >
-                  <GoogleIcon ref={googleIconRef} />
-                  <span className="text-[10px] font-black tracking-[0.2em] text-white/80">GOOGLE</span>
-                </button>
-                <button 
-                  onClick={() => handleSocialAuth('github')}
-                  onMouseEnter={() => githubIconRef.current?.startAnimation()}
-                  onMouseLeave={() => githubIconRef.current?.stopAnimation()}
-                  className="flex items-center justify-center gap-3 bg-secondary/30 hover:bg-secondary/50 border border-border/50 py-4 rounded-xl transition-all active:scale-95 group"
-                >
-                  <GithubIcon ref={githubIconRef} size={18} />
-                  <span className="text-[10px] font-black tracking-[0.2em] text-white/80">GITHUB</span>
-                </button>
-              </div>
-
-              {/* Minimalist OR Divider */}
-              <div className="relative py-4">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border/30"></div>
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-background px-4 text-[9px] font-black tracking-[0.3em] text-muted-foreground/40 italic uppercase">OR</span>
-                </div>
-              </div>
-
-              {/* Email & Password Input Section */}
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/60 ml-1 uppercase">Email Address</label>
-                  <div className="relative group">
-                    <Utensils size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/30 group-focus-within:text-primary/60 transition-colors" />
-                    <input 
-                      type="email"
-                      placeholder="hello@messit.app"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-[#202020] border border-border/50 h-16 rounded-2xl pl-14 pr-6 text-white font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground/30 transition-all shadow-inner"
+                  {/* Premium Brand Icon Container */}
+                  <div className="relative mb-12 animate-in zoom-in-50 duration-700">
+                    <div className="absolute inset-0 bg-primary/20 blur-[60px] rounded-full scale-150" />
+                    <img 
+                      src="/icon.png" 
+                      className="w-28 h-28 sm:w-32 sm:h-32 relative z-10 filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)] select-none object-contain" 
+                      alt="Messit Icon" 
                     />
                   </div>
-                </div>
 
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/60 ml-1 uppercase">Password</label>
-                  <div className="relative group">
-                    <ShieldCheck size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/30 group-focus-within:text-primary/60 transition-colors" />
-                    <input 
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-[#202020] border border-border/50 h-16 rounded-2xl pl-14 pr-6 text-white font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground/30 transition-all shadow-inner"
-                    />
+                  <div className="text-center mb-16 space-y-4 px-4">
+                    <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white">Welcome to Messit</h1>
+                    <p className="text-muted-foreground/60 text-sm sm:text-base leading-relaxed max-w-[320px] mx-auto font-medium">
+                      Your college mess menu, digitized and delivered exactly when you need it.
+                    </p>
                   </div>
-                </div>
-              </div>
 
-              <div className="pt-4 space-y-4">
-                <Button 
-                  onClick={() => setStep(1)}
-                  className="w-full h-16 rounded-2xl bg-white hover:bg-white/95 text-background font-black text-xs tracking-[0.2em] shadow-xl transition-all active:scale-95"
+                  <div className="w-full space-y-4 px-6">
+                    <button 
+                      onClick={() => setAuthMode('auth')}
+                      className="w-full h-16 rounded-2xl bg-[#191919] border border-[#333333] hover:border-[#444444] transition-all duration-300 group relative overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-sm font-bold text-white tracking-wide">Create an Account</span>
+                        <ChevronRight size={18} className="text-white/40 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </button>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <button 
+                        onClick={() => setAuthMode('auth')}
+                        className="h-14 rounded-2xl bg-transparent border border-border/40 hover:bg-white/5 text-white/80 font-bold text-xs tracking-wider transition-all"
+                      >
+                        Log In
+                      </button>
+                      <button 
+                        onClick={handleGuestSkip}
+                        className="h-14 rounded-2xl bg-transparent border border-border/40 hover:bg-white/5 text-white/80 font-bold text-xs tracking-wider transition-all"
+                      >
+                        Skip for Now
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-20">
+                    <p className="text-[10px] text-muted-foreground/40 text-center leading-relaxed">
+                      By continuing, you agree to our <br/>
+                      <span className="underline decoration-muted-foreground/20 underline-offset-4">terms of service</span> and <span className="underline decoration-muted-foreground/20 underline-offset-4">privacy policy</span>.
+                    </p>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="auth_view"
+                  initial={{ opacity: 0, scale: 1.1 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="py-12"
                 >
-                  CONTINUE
-                </Button>
-                <div className="flex justify-center">
-                  <button 
-                    onClick={handleGuestSkip}
-                    className="text-muted-foreground/40 hover:text-primary text-[9px] font-black uppercase tracking-[0.3em] transition-colors py-2"
-                  >
-                    Skip for now
-                  </button>
-                </div>
-              </div>
-            </div>
+                  <div className="text-center mb-16 px-4 relative">
+                    <button 
+                      onClick={() => setAuthMode('welcome')}
+                      className="absolute left-0 top-1/2 -translate-y-1/2 p-2 rounded-xl bg-secondary/30 text-white/40 hover:text-white transition-colors"
+                    >
+                      <ArrowLeft size={20} />
+                    </button>
+                    <h1 className="text-4xl font-black tracking-tight mb-2 text-white">Messit</h1>
+                    <p className="text-muted-foreground/60 text-sm font-medium">Your elite dining companion.</p>
+                  </div>
+
+                  <div className="space-y-8 px-2">
+                    {/* Social Auth Row (Notion Style) */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <button 
+                        onClick={() => handleSocialAuth('google-oauth2')}
+                        onMouseEnter={() => googleIconRef.current?.startAnimation()}
+                        onMouseLeave={() => googleIconRef.current?.stopAnimation()}
+                        className="flex items-center justify-center gap-3 bg-secondary/30 hover:bg-secondary/50 border border-border/50 py-4 rounded-xl transition-all active:scale-95 group"
+                      >
+                        <GoogleIcon ref={googleIconRef} />
+                        <span className="text-[10px] font-black tracking-[0.2em] text-white/80">GOOGLE</span>
+                      </button>
+                      <button 
+                        onClick={() => handleSocialAuth('github')}
+                        onMouseEnter={() => githubIconRef.current?.startAnimation()}
+                        onMouseLeave={() => githubIconRef.current?.stopAnimation()}
+                        className="flex items-center justify-center gap-3 bg-secondary/30 hover:bg-secondary/50 border border-border/50 py-4 rounded-xl transition-all active:scale-95 group"
+                      >
+                        <GithubIcon ref={githubIconRef} size={18} />
+                        <span className="text-[10px] font-black tracking-[0.2em] text-white/80">GITHUB</span>
+                      </button>
+                    </div>
+
+                    {/* Minimalist OR Divider */}
+                    <div className="relative py-4">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-border/30"></div>
+                      </div>
+                      <div className="relative flex justify-center">
+                        <span className="bg-background px-4 text-[9px] font-black tracking-[0.3em] text-muted-foreground/40 italic uppercase">OR</span>
+                      </div>
+                    </div>
+
+                    {/* Email & Password Input Section */}
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/60 ml-1 uppercase">Email Address</label>
+                        <div className="relative group">
+                          <Utensils size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/30 group-focus-within:text-primary/60 transition-colors" />
+                          <input 
+                            type="email"
+                            placeholder="hello@messit.app"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full bg-[#202020] border border-border/50 h-16 rounded-2xl pl-14 pr-6 text-white font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground/30 transition-all shadow-inner"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/60 ml-1 uppercase">Password</label>
+                        <div className="relative group">
+                          <ShieldCheck size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground/30 group-focus-within:text-primary/60 transition-colors" />
+                          <input 
+                            type="password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full bg-[#202020] border border-border/50 h-16 rounded-2xl pl-14 pr-6 text-white font-medium text-sm focus:outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground/30 transition-all shadow-inner"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 space-y-4 text-center">
+                      <Button 
+                        onClick={() => setStep(1)}
+                        className="w-full h-16 rounded-2xl bg-white hover:bg-white/95 text-background font-black text-xs tracking-[0.2em] shadow-xl transition-all active:scale-95"
+                      >
+                        CONTINUE
+                      </Button>
+                      <button 
+                        onClick={handleGuestSkip}
+                        className="text-muted-foreground/40 hover:text-white text-[9px] font-black uppercase tracking-[0.3em] transition-colors py-2"
+                      >
+                        Skip for now
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
 
