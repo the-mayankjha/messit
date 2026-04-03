@@ -15,6 +15,12 @@ import { SearchIcon } from './components/ui/icons/SearchIcon';
 import { useAuth0 } from '@auth0/auth0-react';
 import { requestNotificationPermission, sendNotification } from './utils/notifier';
 import NotificationDrawer from './components/NotificationDrawer';
+import { CoffeeIcon } from './components/ui/icons/CoffeeIcon';
+import { LunchIcon } from './components/ui/icons/LunchIcon';
+import { SnacksIcon } from './components/ui/icons/SnacksIcon';
+import { DinnerIcon } from './components/ui/icons/DinnerIcon';
+import { CookingPotIcon } from './components/ui/icons/CookingPotIcon';
+import { CalendarDaysIcon } from './components/ui/icons/CalendarDaysIcon';
 
 export default function App() {
   const { 
@@ -178,18 +184,62 @@ export default function App() {
   const needsOnboarding = isAuthenticated ? !hostel : !isOnboarded;
 
   if (isLoading || isSyncingProfile) {
+    const loadingText = notificationMode === 'princess' 
+      ? 'Cooking Delicious Meal for My Princess' 
+      : 'Cooking you Delicious Meal';
+
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 space-y-6 text-center">
-        <div 
-          className="w-16 h-16 border-4 rounded-full animate-spin" 
-          style={{ borderTopColor: accentHex, borderLeftColor: `${accentHex}20`, borderRightColor: `${accentHex}20`, borderBottomColor: `${accentHex}20` }}
-        />
-        <div>
-          <p className="text-xs font-bold tracking-widest uppercase animate-pulse" style={{ color: accentHex }}>
-            {isLoading ? 'Initializing Identity...' : 'Syncing Profile...'}
-          </p>
-          <p className="text-[10px] text-muted-foreground mt-2">
-            {isLoading ? 'Checking secure tunnel to Auth0' : 'Fetching your preferences from the cloud'}
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 space-y-12 text-center overflow-hidden">
+        <div className="relative w-full max-w-[280px] overflow-hidden mask-fade-edges py-4 opacity-50">
+          <motion.div 
+            className="flex gap-10 whitespace-nowrap"
+            animate={{ x: [0, -384] }}
+            transition={{ 
+              duration: 12, 
+              repeat: Infinity, 
+              ease: "linear" 
+            }}
+          >
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex gap-10 shrink-0">
+                <CoffeeIcon size={32} className="text-foreground shrink-0" />
+                <LunchIcon size={32} className="text-foreground shrink-0" />
+                <SnacksIcon size={32} className="text-foreground shrink-0" />
+                <DinnerIcon size={32} className="text-foreground shrink-0" />
+                <CookingPotIcon size={32} className="text-foreground shrink-0" />
+                <CalendarDaysIcon size={32} className="text-foreground shrink-0" />
+              </div>
+            ))}
+          </motion.div>
+        </div>
+
+        <div className="space-y-4 max-w-xs">
+          <motion.p 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-[11px] font-black tracking-[0.3em] uppercase text-foreground/60 italic"
+          >
+            {loadingText}
+          </motion.p>
+          <div className="flex justify-center gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                animate={{ 
+                  scale: [1, 1.4, 1],
+                  opacity: [0.2, 0.6, 0.2] 
+                }}
+                transition={{ 
+                  duration: 1.5, 
+                  repeat: Infinity, 
+                  delay: i * 0.3 
+                }}
+                className="w-1 h-1 rounded-full bg-foreground/30"
+              />
+            ))}
+          </div>
+          <p className="text-[9px] text-muted-foreground/30 font-bold uppercase tracking-widest pt-4">
+            Establishing Secure Tunnel...
           </p>
         </div>
       </div>
