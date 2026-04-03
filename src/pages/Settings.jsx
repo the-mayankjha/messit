@@ -1,17 +1,19 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store/useStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { 
-  Moon, Sun, Check, Crown, Dumbbell, Bell, 
+  Check, Crown, Dumbbell, Bell, 
   User, Mail, Building, Key, ShieldCheck,
   ShieldAlert, RefreshCw, Save, UserX, Lock
 } from 'lucide-react';
 import { GoogleIcon } from '../components/ui/icons/GoogleIcon';
 import { GithubIcon } from '../components/ui/icons/GithubIcon';
 import { BellRingIcon } from '../components/ui/icons/BellRingIcon';
+import { MoonIcon } from '../components/ui/icons/MoonIcon';
+import { SunIcon } from '../components/ui/icons/SunIcon';
 import { useAuth0 } from '@auth0/auth0-react';
 import { requestNotificationPermission, sendNotification } from '../utils/notifier';
 import { ACCENT_COLORS } from '../constants/colors';
@@ -44,6 +46,8 @@ export default function Settings() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [coordinatorRequest, setCoordinatorRequest] = useState(null);
   const [isRequesting, setIsRequesting] = useState(false);
+  const moonIconRef = useRef(null);
+  const sunIconRef = useRef(null);
 
   const hostels = {
     male: ['MH1', 'MH2', 'MH3', 'MH4', 'MH5', 'MH6', 'MH7'],
@@ -130,8 +134,8 @@ export default function Settings() {
   const [lastTestResult, setLastTestResult] = useState(null);
 
   const themes = [
-    { id: 'light', icon: Sun, label: 'Light' },
-    { id: 'dark', icon: Moon, label: 'Dark' }
+    { id: 'light', label: 'Light' },
+    { id: 'dark', label: 'Dark' },
   ];
 
   const handleTestNotification = async () => {
@@ -455,19 +459,41 @@ export default function Settings() {
             <CardContent className="space-y-6">
               <div className="flex gap-2">
                 {themes.map((t) => {
-                  const Icon = t.icon;
+                  const isActive = theme === t.id;
+                  const isDark = t.id === 'dark';
                   return (
                     <button
                       key={t.id}
-                      onClick={() => setTheme(t.id)}
+                      onClick={() => {
+                        setTheme(t.id);
+                        if (isDark) moonIconRef.current?.startAnimation();
+                        else sunIconRef.current?.startAnimation();
+                      }}
                       className={`flex-1 flex flex-col items-center justify-center py-4 rounded-2xl border-2 transition-all ${
-                        theme === t.id ? 'border-primary bg-primary/10' : 'border-border/40 hover:bg-muted'
+                        isActive ? 'bg-secondary/30' : 'border-border/40 hover:bg-muted'
                       }`}
+                      style={isActive ? { borderColor: accentHex, backgroundColor: `${accentHex}10` } : {}}
                     >
-                      <Icon className="w-5 h-5 mb-2" />
-                      <span className="text-[10px] sm:text-xs font-bold">{t.label}</span>
+                      {isDark ? (
+                        <MoonIcon
+                          ref={moonIconRef}
+                          size={20}
+                          className="mb-2"
+                          isAnimated={true}
+                        />
+                      ) : (
+                        <SunIcon
+                          ref={sunIconRef}
+                          size={20}
+                          className="mb-2"
+                          isAnimated={true}
+                        />
+                      )}
+                      <span className="text-[10px] sm:text-xs font-bold">
+                        {t.label}
+                      </span>
                     </button>
-                  )
+                  );
                 })}
               </div>
 

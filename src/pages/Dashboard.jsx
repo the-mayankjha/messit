@@ -30,11 +30,11 @@ import { getAnnouncements } from '../lib/supabase';
 export default function Dashboard() {
   const { 
     menuData, setMenuData, accentColor, theme, user,
-    cloudMenuInfo, syncStatus, isSyncing 
+    cloudMenuInfo, syncStatus, isSyncing,
+    dismissedAnnouncementIds, dismissAnnouncement
   } = useStore();
   const [view, setView] = useState('day'); // 'day' | 'week' | 'month'
   const [announcements, setAnnouncements] = useState([]);
-  const [showAnnouncements, setShowAnnouncements] = useState(true);
   
   const fetchAnnouncements = () => {
     getAnnouncements().then(res => {
@@ -206,8 +206,17 @@ export default function Dashboard() {
                         meal.status === 'Ongoing' ? 'animate-pulse' : ''
                       }`}
                       style={{ 
-                        backgroundColor: meal.status === 'Ongoing' ? accentHex : meal.status === 'Upcoming' ? `${accentHex}30` : undefined,
-                        color: meal.status === 'Done' ? undefined : (effectiveTheme === 'light' ? '#000' : '#fff') 
+                        backgroundColor: meal.status === 'Done'
+                          ? 'rgba(128,128,128,0.15)'
+                          : effectiveTheme === 'dark'
+                            ? 'rgba(255,255,255,0.08)'
+                            : (meal.status === 'Ongoing' ? accentHex : `${accentHex}25`),
+                        color: meal.status === 'Done'
+                          ? (effectiveTheme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)')
+                          : effectiveTheme === 'dark'
+                            ? accentHex
+                            : '#fff',
+                        border: meal.status !== 'Done' && effectiveTheme === 'dark' ? `1px solid ${accentHex}40` : undefined
                       }}
                     >
                       {meal.status}
@@ -273,45 +282,48 @@ export default function Dashboard() {
 
         {/* Global Announcements Section */}
         <AnimatePresence>
-          {showAnnouncements && announcements.length > 0 && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="w-full lg:w-3/5 border rounded-3xl p-4 overflow-hidden relative group shadow-2xl transition-colors duration-500"
-              style={{ 
-                backgroundColor: `${accentHex}10`, 
-                borderColor: `${accentHex}30` 
-              }}
-            >
-              <button 
-                onClick={() => setShowAnnouncements(false)}
-                className="absolute top-2 right-2 p-1.5 rounded-full transition-all z-20"
-                style={{ color: `${accentHex}80` }}
-                onMouseEnter={(e) => e.target.style.color = accentHex}
-                onMouseLeave={(e) => e.target.style.color = `${accentHex}80`}
+          {(() => {
+            const latest = announcements[0];
+            if (!latest) return null;
+            if (dismissedAnnouncementIds.includes(latest.id)) return null;
+            return (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="w-full lg:w-3/5 border rounded-3xl p-4 overflow-hidden relative group shadow-2xl transition-colors duration-500"
+                style={{ 
+                  backgroundColor: `${accentHex}10`, 
+                  borderColor: `${accentHex}30` 
+                }}
               >
-                <X size={14} />
-              </button>
-              <div className="flex items-start gap-4">
-                <div 
-                  className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg border"
-                  style={{ backgroundColor: `${accentHex}20`, color: accentHex, borderColor: `${accentHex}30` }}
+                <button 
+                  onClick={() => dismissAnnouncement(latest.id)}
+                  className="absolute top-2 right-2 p-1.5 rounded-full transition-all z-20"
+                  style={{ color: `${accentHex}80` }}
+                  onMouseEnter={(e) => e.target.style.color = accentHex}
+                  onMouseLeave={(e) => e.target.style.color = `${accentHex}80`}
                 >
-                  <Megaphone size={20} className="animate-bounce" />
-                </div>
-                <div className="min-w-0 pr-8">
-                   <h4 className="text-[10px] font-black uppercase tracking-[0.25em] mb-1.5" style={{ color: accentHex }}>Latest Broadcast</h4>
-                   {announcements[0] && (
+                  <X size={14} />
+                </button>
+                <div className="flex items-start gap-4">
+                  <div 
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg border"
+                    style={{ backgroundColor: `${accentHex}20`, color: accentHex, borderColor: `${accentHex}30` }}
+                  >
+                    <Megaphone size={20} className="animate-bounce" />
+                  </div>
+                  <div className="min-w-0 pr-8">
+                     <h4 className="text-[10px] font-black uppercase tracking-[0.25em] mb-1.5" style={{ color: accentHex }}>Latest Broadcast</h4>
                      <div className="animate-in fade-in slide-in-from-right-2 duration-500">
-                       <p className="text-sm font-bold text-foreground mb-0.5 truncate">{announcements[0].title}</p>
-                       <p className="text-xs text-muted-foreground line-clamp-1">{announcements[0].content}</p>
+                       <p className="text-sm font-bold text-foreground mb-0.5 truncate">{latest.title}</p>
+                       <p className="text-xs text-muted-foreground line-clamp-1">{latest.content}</p>
                      </div>
-                   )}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            );
+          })()}
         </AnimatePresence>
         
         <div className="flex items-center gap-4">

@@ -59,14 +59,15 @@ export const useStore = create(
 
       // Notifications History (Persistent)
       notifications: [],
-      addNotification: (title, body) => set((state) => ({
+      addNotification: (title, body, extra = {}) => set((state) => ({
         notifications: [
           {
             id: Date.now().toString(),
             title,
             body,
             timestamp: new Date().toISOString(),
-            read: false
+            read: false,
+            ...extra
           },
           ...state.notifications
         ].slice(0, 50) // Keep last 50
@@ -77,6 +78,14 @@ export const useStore = create(
       clearNotifications: () => set({ notifications: [] }),
       markAllAsRead: () => set((state) => ({
         notifications: state.notifications.map(n => ({ ...n, read: true }))
+      })),
+
+      // Dismissed Announcement Banner IDs (Persistent)
+      dismissedAnnouncementIds: [],
+      dismissAnnouncement: (annId) => set((state) => ({
+        dismissedAnnouncementIds: state.dismissedAnnouncementIds.includes(annId)
+          ? state.dismissedAnnouncementIds
+          : [...state.dismissedAnnouncementIds, annId]
       })),
     }),
     {

@@ -213,7 +213,7 @@ export default function App() {
           histRes.data.reverse().forEach(ann => {
             const title = `📢 ${ann.title}`;
             if (!existingTitles.includes(title)) {
-              state.addNotification(title, ann.content);
+              state.addNotification(title, ann.content, { announcementId: ann.id });
             }
           });
         }

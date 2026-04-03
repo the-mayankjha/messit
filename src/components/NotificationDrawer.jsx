@@ -15,7 +15,8 @@ export default function NotificationDrawer() {
     clearNotifications,
     markAllAsRead,
     accentColor,
-    theme
+    theme,
+    dismissAnnouncement
   } = useStore();
 
   const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -87,7 +88,8 @@ export default function NotificationDrawer() {
                       key={notif.id} 
                       notification={notif} 
                       accentHex={accentHex}
-                      onRemove={() => removeNotification(notif.id)} 
+                      onRemove={() => removeNotification(notif.id)}
+                      onDismissAnnouncement={dismissAnnouncement}
                     />
                   ))
                 ) : (
@@ -112,7 +114,13 @@ export default function NotificationDrawer() {
             {notifications.length > 0 && (
               <div className="p-6 border-t border-border bg-secondary/10">
                 <button
-                  onClick={clearNotifications}
+                  onClick={() => {
+                    // Dismiss all announcement-linked banners before clearing
+                    notifications.forEach(n => {
+                      if (n.announcementId) dismissAnnouncement(n.announcementId);
+                    });
+                    clearNotifications();
+                  }}
                   className="w-full flex items-center justify-center gap-1.5 py-3 px-4 rounded-2xl bg-muted/50 hover:bg-muted text-muted-foreground font-bold text-sm transition-all border border-border group"
                 >
                   Clear All Notifications
@@ -126,7 +134,7 @@ export default function NotificationDrawer() {
   );
 }
 
-function NotificationItem({ notification, onRemove, accentHex }) {
+function NotificationItem({ notification, onRemove, onDismissAnnouncement, accentHex }) {
   return (
     <motion.div
       layout
@@ -138,6 +146,7 @@ function NotificationItem({ notification, onRemove, accentHex }) {
       dragElastic={0.2}
       onDragEnd={(_, info) => {
         if (Math.abs(info.offset.x) > 100) {
+          if (notification.announcementId) onDismissAnnouncement(notification.announcementId);
           onRemove();
         }
       }}
