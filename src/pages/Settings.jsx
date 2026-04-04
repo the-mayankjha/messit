@@ -56,13 +56,19 @@ export default function Settings() {
     female: ['LH1', 'LH2', 'LH3', 'LH4', 'LH5']
   };
 
+  // Persistent session: Auth0 OR cached store user (works offline too)
+  const isEffectivelyAuthenticated = isAuthenticated || (!!user && user.email !== 'guest@messit.co');
+  // Derive active user: prefer live Auth0 user, fall back to store cache
+  const activeUser = auth0User ?? user;
+
   const loginProvider = useMemo(() => {
-    if (!isAuthenticated) return 'Guest';
-    if (!auth0User?.sub) return 'Processing...'; // Prevent flicker to Guest
-    if (auth0User.sub.startsWith('google')) return 'Google';
-    if (auth0User.sub.startsWith('github')) return 'GitHub';
+    if (!isEffectivelyAuthenticated) return 'Guest';
+    if (!activeUser?.sub && !activeUser?.email) return 'Processing...';
+    const sub = activeUser?.sub ?? '';
+    if (sub.startsWith('google') || activeUser?.email?.includes('gmail')) return 'Google';
+    if (sub.startsWith('github')) return 'GitHub';
     return 'Email';
-  }, [auth0User, isAuthenticated]);
+  }, [activeUser, isEffectivelyAuthenticated]);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
