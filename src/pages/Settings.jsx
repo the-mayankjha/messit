@@ -49,11 +49,13 @@ export default function Settings() {
   const [coordinatorRequest, setCoordinatorRequest] = useState(null);
   const [isRequesting, setIsRequesting] = useState(false);
   const [isUpdatingApp, setIsUpdatingApp] = useState(false);
+  const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [updateMessage, setUpdateMessage] = useState('');
   const moonIconRef = useRef(null);
   const sunIconRef = useRef(null);
   const bellIconRef = useRef(null);
   const downloadIconRef = useRef(null);
+  const updateHeaderIconRef = useRef(null);
 
   const hostels = {
     male: ['MH1', 'MH2', 'MH3', 'MH4', 'MH5', 'MH6', 'MH7'],
@@ -129,6 +131,20 @@ export default function Settings() {
     }
   }, [user?.email]);
 
+  useEffect(() => {
+    const syncUpdateState = () => {
+      setIsUpdateAvailable(Boolean(window.__messitUpdateAvailable));
+      if (window.__messitUpdateAvailable) {
+        updateHeaderIconRef.current?.startAnimation();
+      }
+    };
+
+    syncUpdateState();
+    window.addEventListener('messit-update-available', syncUpdateState);
+
+    return () => window.removeEventListener('messit-update-available', syncUpdateState);
+  }, []);
+
   const handleRequestCoordinator = async () => {
     if (!user?.email || !user?.name || !hostel) return;
     setIsRequesting(true);
@@ -181,8 +197,11 @@ export default function Settings() {
     }
 
     setIsUpdatingApp(true);
+    setIsUpdateAvailable(false);
+    window.__messitUpdateAvailable = false;
     setUpdateMessage('Checking for the latest build...');
     downloadIconRef.current?.startAnimation();
+    updateHeaderIconRef.current?.stopAnimation();
 
     try {
       let reloaded = false;
@@ -415,7 +434,7 @@ export default function Settings() {
                      </div>
                      <div>
                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Platform Role</p>
-                       <p className="font-bold underline decoration-dotted underline-offset-4" style={{ color: accentHex }}>{role || 'None'}</p>
+                       <p className="font-bold" style={{ color: accentHex }}>{role || 'None'}</p>
                      </div>
                    </div>
                    <div 
@@ -794,7 +813,18 @@ export default function Settings() {
                     color: effectiveTheme === 'dark' ? '#ffffff' : '#171717'
                   }}
                 >
-                  <DownloadIcon size={18} />
+                  <div className="relative">
+                    <DownloadIcon ref={updateHeaderIconRef} size={18} />
+                    {isUpdateAvailable && (
+                      <span
+                        className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full"
+                        style={{
+                          backgroundColor: accentHex,
+                          boxShadow: `0 0 0 3px ${effectiveTheme === 'dark' ? '#1f1f1f' : '#ffffff'}`
+                        }}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -823,6 +853,11 @@ export default function Settings() {
                     <p className="text-[10px] text-muted-foreground/70 mt-1">
                       {__BUILD_VARIANT__ === 'DEV' ? 'Development build' : 'Production build'}
                     </p>
+                    {isUpdateAvailable && (
+                      <p className="text-[10px] mt-2 font-semibold" style={{ color: accentHex }}>
+                        A newer build is ready to install.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
