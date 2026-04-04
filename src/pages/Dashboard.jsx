@@ -139,8 +139,8 @@ export default function Dashboard() {
 
         if (cardRef.current) {
           const dataUrl = await toPng(cardRef.current, {
-            backgroundColor: effectiveTheme === 'dark' ? '#111111' : '#ffffff', // Elite Theme Sync
-            style: { borderRadius: '0' },
+            backgroundColor: 'transparent', // Let the capture-frame handle background
+            pixelRatio: 3,
             cacheBust: true,
             filter: (node) => {
               const exclusionClasses = ['capture-exclude'];
@@ -175,18 +175,27 @@ export default function Dashboard() {
     };
 
     return (
-      <div ref={cardRef} className="relative h-full">
-        {isCapturing && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-md rounded-2xl animate-in fade-in duration-300 capture-exclude">
-            <div className="flex flex-col items-center gap-4">
-              <div className="relative">
-                <SendIcon size={44} strokeWidth={1.4} className="text-foreground" isAnimated={true} />
-              </div>
-              <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-foreground/60">Capturing Snapshot</p>
-            </div>
+      <div ref={cardRef} className="relative p-6 -m-6 bg-transparent rounded-[2.5rem]">
+        {/* Branding Footer: Only visible during capture or when isCapturing is true */}
+        <div className={`absolute bottom-2 left-0 right-0 flex flex-col items-center gap-1 opacity-0 transition-opacity duration-300 pointer-events-none ${isCapturing ? 'opacity-100' : 'hidden'}`}>
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60">MESSIT &mdash; Never miss it</p>
           </div>
-        )}
-        <Card className="h-full flex flex-col group">
+          <p className="text-[8px] font-bold text-muted-foreground/30 uppercase tracking-[0.2em]">Version {__APP_VERSION__}</p>
+        </div>
+
+        <Card className="h-full flex flex-col group relative overflow-hidden">
+          {isCapturing && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-300 capture-exclude">
+              <div className="flex flex-col items-center gap-3 scale-90 sm:scale-100">
+                <div className="relative">
+                  <SendIcon size={32} strokeWidth={1.2} className="text-foreground/80" isAnimated={true} />
+                </div>
+                <p className="text-[9px] font-bold tracking-[0.2em] uppercase text-foreground/40">Capturing Snapshot</p>
+              </div>
+            </div>
+          )}
           <CardHeader 
             className={`pb-3 border-b transition-colors ${meal.status === 'Ongoing' ? 'border-primary/20' : 'border-border/50 group-hover:bg-muted/10'}`}
             style={{ backgroundColor: meal.status === 'Ongoing' ? `${accentHex}15` : undefined }}
@@ -259,6 +268,9 @@ export default function Dashboard() {
               </div>
             )}
           </CardContent>
+          
+          {/* Subtle padding at the bottom to ensure branding fits nicely during capture */}
+          {isCapturing && <div className="h-16 pt-2" />}
         </Card>
       </div>
     );
