@@ -124,6 +124,7 @@ export default function Dashboard() {
     const sendIconRef = useRef(null);
     const cardRef = useRef(null);
     const [isCapturing, setIsCapturing] = useState(false);
+    const captureRef = useRef(null); // Ref on the inner Card element (no padding bloat)
 
     const handleShare = async (e) => {
       e.stopPropagation();
@@ -136,7 +137,7 @@ export default function Dashboard() {
 
         // Show the brand footer directly in the DOM just before capture.
         // Direct mutation is the only reliable way — no React re-render needed.
-        const footerEl = cardRef.current?.querySelector('.brand-footer');
+        const footerEl = captureRef.current?.querySelector('.brand-footer');
         if (footerEl) {
           footerEl.style.height = '40px';
           footerEl.style.opacity = '1';
@@ -144,9 +145,17 @@ export default function Dashboard() {
           footerEl.style.paddingBottom = '10px';
         }
 
-        if (cardRef.current) {
-          const dataUrl = await toPng(cardRef.current, {
-            backgroundColor: 'transparent',
+        if (captureRef.current) {
+          // Read --background from :root directly (works reliably unlike getComputedStyle on fresh elements)
+          const rawBg = getComputedStyle(document.documentElement).getPropertyValue('--background').trim();
+          const themeBg = rawBg ? `hsl(${rawBg})` : (document.documentElement.classList.contains('dark') ? '#09090b' : '#ffffff');
+
+          // Also force the background on the element itself so no transparency leaks through rounded corners
+          const prevBg = captureRef.current.style.backgroundColor;
+          captureRef.current.style.backgroundColor = themeBg;
+
+          const dataUrl = await toPng(captureRef.current, {
+            backgroundColor: themeBg,
             pixelRatio: 3,
             cacheBust: true,
             filter: (node) => {
@@ -154,6 +163,9 @@ export default function Dashboard() {
               return !exclusionClasses.some(cls => node.classList?.contains(cls));
             }
           });
+
+          // Restore original background
+          captureRef.current.style.backgroundColor = prevBg;
 
           const blob = await (await fetch(dataUrl)).blob();
           const file = new File([blob], `Messit-${meal.label}.png`, { type: 'image/png' });
@@ -178,7 +190,7 @@ export default function Dashboard() {
         console.error('Sharing failed:', error);
       } finally {
         // Restore footer to hidden state
-        const footerEl = cardRef.current?.querySelector('.brand-footer');
+        const footerEl = captureRef.current?.querySelector('.brand-footer');
         if (footerEl) {
           footerEl.style.height = '0px';
           footerEl.style.opacity = '0';
@@ -191,7 +203,7 @@ export default function Dashboard() {
 
     return (
       <div ref={cardRef} className="relative p-6 -m-6 bg-transparent rounded-[2.5rem]">
-        <Card className="h-full flex flex-col group relative overflow-hidden">
+        <Card ref={captureRef} className="h-full flex flex-col group relative overflow-hidden">
           {isCapturing && (
             <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-md animate-in fade-in duration-300 capture-exclude">
               <div className="flex flex-col items-center gap-3 scale-90 sm:scale-100">
