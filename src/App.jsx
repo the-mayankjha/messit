@@ -25,7 +25,8 @@ import { CalendarDaysIcon } from './components/ui/icons/CalendarDaysIcon';
 import { getMessMenu } from './lib/supabase';
 import { CloudUploadIcon } from './components/ui/icons/CloudUploadIcon';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
-import { WifiIcon } from 'lucide-react';
+import { WifiAnimatedIcon } from './components/ui/icons/WifiAnimatedIcon';
+import { WifiOffAnimatedIcon } from './components/ui/icons/WifiOffAnimatedIcon';
 
 export default function App() {
   const { 
@@ -388,7 +389,13 @@ export default function App() {
 
   const needsOnboarding = isAuthenticated ? !hostel : !isOnboarded;
 
-  if (isLoading || isSyncingProfile) {
+  // ─── OFFLINE FAST-PASS ──────────────────────────────────────────
+  // If there's no network but we have cached data, skip the loading
+  // screen entirely and render the app from localStorage immediately.
+  const isOfflineMode = !navigator.onLine && !isOnline;
+  const hasLocalCache = !!menuData && isOnboarded;
+
+  if ((isLoading || isSyncingProfile) && !(isOfflineMode && hasLocalCache)) {
     const loadingText = notificationMode === 'princess' 
       ? 'Cooking Delicious Meal for My Princess' 
       : 'Cooking you Delicious Meal';
@@ -443,9 +450,22 @@ export default function App() {
               />
             ))}
           </div>
-          <p className="text-[9px] text-muted-foreground/30 font-bold uppercase tracking-widest pt-4">
-            Establishing Secure Tunnel...
-          </p>
+          {isOfflineMode ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center gap-3"
+            >
+              <WifiOffAnimatedIcon size={28} className="text-muted-foreground/50" />
+              <p className="text-[9px] text-muted-foreground/40 font-bold uppercase tracking-widest">
+                You're Offline · Cached Data
+              </p>
+            </motion.div>
+          ) : (
+            <p className="text-[9px] text-muted-foreground/30 font-bold uppercase tracking-widest pt-4">
+              Establishing Secure Tunnel...
+            </p>
+          )}
         </div>
       </div>
     );
@@ -514,6 +534,20 @@ export default function App() {
 
       {/* Connection Recovery Indicator */}
       <OfflineIndicator />
+
+      {/* Offline banner — shown instantly when device has no network */}
+      {isOfflineMode && (
+        <motion.div
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed top-0 left-0 right-0 z-[100] flex items-center justify-center gap-2 py-2 bg-muted/80 backdrop-blur-md border-b border-border/40"
+        >
+          <WifiOffAnimatedIcon size={14} className="text-muted-foreground/60" />
+          <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60">
+            Offline — Showing Cached Data
+          </p>
+        </motion.div>
+      )}
 
       {/* Header Navigation */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
