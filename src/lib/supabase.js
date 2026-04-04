@@ -268,6 +268,46 @@ export async function getAnnouncements() {
 }
 
 /**
+ * Update an existing Global Announcement
+ */
+export async function updateAnnouncement(id, title, content) {
+  try {
+    const { data, error } = await supabase
+      .from('announcements')
+      .update({
+        title,
+        content
+      })
+      .eq('id', id)
+      .select();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (err) {
+    console.error("Update Announcement Error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Delete a Global Announcement
+ */
+export async function deleteAnnouncement(id) {
+  try {
+    const { error } = await supabase
+      .from('announcements')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (err) {
+    console.error("Delete Announcement Error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * Fetch a specific user's coordinator request status.
  */
 export async function getUserCoordinatorRequest(email) {

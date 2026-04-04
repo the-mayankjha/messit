@@ -57,12 +57,16 @@ export const useStore = create(
       setSyncStatus: (status) => set(status),
       setCloudMenuInfo: (cloudMenuInfo) => set({ cloudMenuInfo }),
 
+      // Online Status (Un-persistent)
+      isOnline: typeof window !== 'undefined' ? window.navigator.onLine : true,
+      setIsOnline: (isOnline) => set({ isOnline }),
+
       // Notifications History (Persistent)
       notifications: [],
       addNotification: (title, body, extra = {}) => set((state) => ({
         notifications: [
           {
-            id: Date.now().toString(),
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             title,
             body,
             timestamp: new Date().toISOString(),
@@ -90,6 +94,10 @@ export const useStore = create(
     }),
     {
       name: 'messit-storage',
+      partialize: (state) => 
+        Object.fromEntries(
+          Object.entries(state).filter(([key]) => !['isOnline'].includes(key))
+        ),
     }
   )
 );

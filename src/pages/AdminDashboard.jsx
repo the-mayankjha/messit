@@ -16,6 +16,8 @@ import { Input } from '../components/ui/Input';
 import { 
   getPendingRequests, updateRequestStatus, 
   uploadMessMenu, createAnnouncement,
+  updateAnnouncement, deleteAnnouncement,
+  getAnnouncements,
   supabase, getPrivilegedUsers, revokeUserRole
 } from '../lib/supabase';
 import { parseExcelMenu } from '../utils/excelParser';
@@ -49,6 +51,9 @@ export default function AdminDashboard() {
   const [announcementTitle, setAnnouncementTitle] = useState('');
   const [announcementBody, setAnnouncementBody] = useState('');
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [allAnnouncements, setAllAnnouncements] = useState([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState(null); // { id, title, content }
 
   const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   const effectiveTheme = theme === 'system' ? systemTheme : theme;
@@ -64,6 +69,9 @@ export default function AdminDashboard() {
     if (activeTab === 'identity' && role === 'Admin') {
       fetchRequests();
       fetchRoster();
+    }
+    if (activeTab === 'ops') {
+      fetchAnnouncements();
     }
   }, [activeTab]);
 
@@ -145,16 +153,52 @@ export default function AdminDashboard() {
   const handleBroadcast = async () => {
     if (!announcementTitle || !announcementBody) return;
     setIsBroadcasting(true);
-    const res = await createAnnouncement(announcementTitle, announcementBody, user?.email);
+    
+    let res;
+    if (editingAnnouncement) {
+      res = await updateAnnouncement(editingAnnouncement.id, announcementTitle, announcementBody);
+    } else {
+      res = await createAnnouncement(announcementTitle, announcementBody, user?.email);
+    }
+
     if (res.success) {
-      setSuccess("Broadcast sent to all students!");
+      setSuccess(editingAnnouncement ? "Broadcast updated!" : "Broadcast sent to all students!");
       setAnnouncementTitle('');
       setAnnouncementBody('');
+      setEditingAnnouncement(null);
+      fetchAnnouncements();
       setTimeout(() => setSuccess(null), 3000);
     } else {
       setError(res.error);
     }
     setIsBroadcasting(false);
+  };
+
+  const fetchAnnouncements = async () => {
+    setAnnouncementsLoading(true);
+    const res = await getAnnouncements();
+    if (res.success) setAllAnnouncements(res.data);
+    setAnnouncementsLoading(false);
+  };
+
+  const handleDeleteAnnouncement = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this broadcast?")) return;
+    const res = await deleteAnnouncement(id);
+    if (res.success) {
+      setSuccess("Broadcast deleted.");
+      fetchAnnouncements();
+      setTimeout(() => setSuccess(null), 3000);
+    } else {
+      setError(res.error);
+    }
+  };
+
+  const startEditing = (ann) => {
+    setEditingAnnouncement(ann);
+    setAnnouncementTitle(ann.title);
+    setAnnouncementBody(ann.content);
+    // Scroll to the composer
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -563,9 +607,25 @@ export default function AdminDashboard() {
               {/* Announcement Composer */}
               <Card className="border-none shadow-xl border-border/10">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-3">
-                    <Megaphone className="text-orange-500" size={22} />
-                    <span>Elite Broadcast</span>
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Megaphone className="text-orange-500" size={22} />
+                      <span>{editingAnnouncement ? 'Edit Protocol' : 'Elite Broadcast'}</span>
+                    </div>
+                    {editingAnnouncement && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {
+                          setEditingAnnouncement(null);
+                          setAnnouncementTitle('');
+                          setAnnouncementBody('');
+                        }}
+                        className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 hover:text-red-500"
+                      >
+                        Cancel Edit
+                      </Button>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -588,10 +648,86 @@ export default function AdminDashboard() {
                     disabled={isBroadcasting || !announcementTitle || !announcementBody}
                     className="w-full h-14 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black tracking-widest shadow-xl shadow-orange-500/10"
                   >
-                    {isBroadcasting ? <RefreshCw className="animate-spin" /> : "BROADCAST TO ALL"}
+                    {isBroadcasting ? <RefreshCw className="animate-spin" /> : editingAnnouncement ? "UPDATE BROADCAST" : "BROADCAST TO ALL"}
                   </Button>
                 </CardContent>
               </Card>
+
+              {/* Broadcast Archive / Management */}
+              <div className="lg:col-span-2 space-y-4 mt-6">
+                <div className="flex items-center gap-4 px-1">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/50 whitespace-nowrap">Broadcast Archive</h3>
+                  <div className="h-px flex-1 bg-border/20" />
+                  <span className="text-[10px] font-black text-orange-500/60 whitespace-nowrap">{allAnnouncements.length} BROADCASTS</span>
+                </div>
+
+                {announcementsLoading ? (
+                  <div className="py-12 flex flex-col items-center gap-4 text-muted-foreground/20 text-center">
+                    <RefreshCw size={36} className="animate-spin" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Querying Archive...</p>
+                  </div>
+                ) : allAnnouncements.length === 0 ? (
+                  <div className="py-10 text-center rounded-[2rem] border-2 border-dashed border-border/10 bg-muted/5 flex flex-col items-center gap-3">
+                    <Megaphone size={24} className="text-muted-foreground/20" />
+                    <p className="text-xs font-bold text-muted-foreground/30 uppercase tracking-widest">Archive Empty. No Protocols Logged.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4">
+                    {allAnnouncements.map((ann, i) => {
+                      const canManage = role === 'Admin' || (role === 'Coordinator' && ann.created_by === user?.email);
+                      const isOwn = ann.created_by === user?.email;
+
+                      return (
+                        <motion.div 
+                          key={ann.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="p-6 rounded-[2rem] bg-secondary/10 border border-border/40 hover:bg-secondary/20 transition-all group pointer-events-auto"
+                        >
+                          <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <h4 className="font-bold text-base truncate pr-2">{ann.title}</h4>
+                                {role === 'Admin' && (
+                                  <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${isOwn ? 'bg-primary/10 text-primary border-primary/20' : 'bg-orange-500/10 text-orange-500 border-orange-500/20'}`}>
+                                    BY: {ann.created_by?.split('@')[0]}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{ann.content}</p>
+                              <div className="flex items-center gap-3 mt-3">
+                                <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">
+                                  {new Date(ann.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {canManage && (
+                              <div className="flex items-center gap-2 self-end sm:self-center">
+                                <button
+                                  onClick={() => startEditing(ann)}
+                                  className="p-2.5 rounded-xl bg-background border border-border/40 text-muted-foreground hover:text-primary hover:border-primary/40 transition-all active:scale-90"
+                                  title="Edit Broadcast"
+                                >
+                                  <Settings2 size={16} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteAnnouncement(ann.id)}
+                                  className="p-2.5 rounded-xl bg-background border border-border/40 text-muted-foreground hover:text-red-500 hover:border-red-500/40 transition-all active:scale-90"
+                                  title="Delete Broadcast"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

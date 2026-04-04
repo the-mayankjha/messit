@@ -35,6 +35,7 @@ export default function Dashboard() {
   } = useStore();
   const [view, setView] = useState('day'); // 'day' | 'week' | 'month'
   const [announcements, setAnnouncements] = useState([]);
+  const [isBroadcastExpanded, setIsBroadcastExpanded] = useState(false);
   
   const fetchAnnouncements = () => {
     getAnnouncements().then(res => {
@@ -291,14 +292,15 @@ export default function Dashboard() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="w-full lg:w-3/5 border rounded-3xl p-4 overflow-hidden relative group shadow-2xl transition-colors duration-500"
+                className="w-full lg:w-3/5 border rounded-3xl p-4 overflow-hidden relative group shadow-2xl transition-colors duration-500 cursor-pointer"
+                onClick={() => setIsBroadcastExpanded(!isBroadcastExpanded)}
                 style={{ 
                   backgroundColor: `${accentHex}10`, 
                   borderColor: `${accentHex}30` 
                 }}
               >
                 <button 
-                  onClick={() => dismissAnnouncement(latest.id)}
+                  onClick={(e) => { e.stopPropagation(); dismissAnnouncement(latest.id); }}
                   className="absolute top-2 right-2 p-1.5 rounded-full transition-all z-20"
                   style={{ color: `${accentHex}80` }}
                   onMouseEnter={(e) => e.target.style.color = accentHex}
@@ -316,8 +318,8 @@ export default function Dashboard() {
                   <div className="min-w-0 pr-8">
                      <h4 className="text-[10px] font-black uppercase tracking-[0.25em] mb-1.5" style={{ color: accentHex }}>Latest Broadcast</h4>
                      <div className="animate-in fade-in slide-in-from-right-2 duration-500">
-                       <p className="text-sm font-bold text-foreground mb-0.5 truncate">{latest.title}</p>
-                       <p className="text-xs text-muted-foreground line-clamp-1">{latest.content}</p>
+                       <p className={`text-sm font-bold text-foreground mb-0.5 ${isBroadcastExpanded ? '' : 'truncate'}`}>{latest.title}</p>
+                       <p className={`text-xs text-muted-foreground whitespace-pre-wrap ${isBroadcastExpanded ? '' : 'line-clamp-1'}`}>{latest.content}</p>
                      </div>
                   </div>
                 </div>

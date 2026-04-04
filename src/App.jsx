@@ -24,6 +24,8 @@ import { CookingPotIcon } from './components/ui/icons/CookingPotIcon';
 import { CalendarDaysIcon } from './components/ui/icons/CalendarDaysIcon';
 import { getMessMenu } from './lib/supabase';
 import { CloudUploadIcon } from './components/ui/icons/CloudUploadIcon';
+import { OfflineIndicator } from './components/ui/OfflineIndicator';
+import { WifiIcon } from 'lucide-react';
 
 export default function App() {
   const { 
@@ -48,7 +50,9 @@ export default function App() {
     setMenuData,
     cloudMenuInfo,
     setCloudMenuInfo,
-    addNotification
+    addNotification,
+    isOnline,
+    setIsOnline,
   } = useStore();
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -72,6 +76,24 @@ export default function App() {
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
   }, []);
+  
+  // Connection Status Logic
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Trigger a re-sync when coming back online
+      setSyncStatus({ isSyncing: false, syncStatus: 'idle' });
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [setIsOnline, setSyncStatus]);
 
   const effectiveTheme = theme === 'system' ? systemTheme : theme;
   const accentHex = ACCENT_COLORS[accentColor]?.[effectiveTheme] || ACCENT_COLORS.Blue[effectiveTheme];
@@ -85,9 +107,33 @@ export default function App() {
   const mobileUploadIconRef = useRef(null);
   const mobileSearchIconRef = useRef(null);
 
+  // 1. Clean up duplicate notification IDs from old sessions
+  useEffect(() => {
+    const state = useStore.getState();
+    if (state.notifications.length > 0) {
+      const seenIds = new Set();
+      const uniqueNotifications = state.notifications.map(notif => {
+        if (seenIds.has(notif.id)) {
+          // Re-generate ID for duplicate
+          return { ...notif, id: `${notif.id}-fixed-${Math.random().toString(36).substr(2, 5)}` };
+        }
+        seenIds.add(notif.id);
+        return notif;
+      });
+      
+      if (uniqueNotifications.some((n, i) => n.id !== state.notifications[i].id)) {
+        useStore.setState({ notifications: uniqueNotifications });
+      }
+    }
+  }, []);
+
   // Sync Auth0 User with Store + Fetch Supabase Profile
   useEffect(() => {
     const syncUserAndProfile = async () => {
+      if (!isOnline) {
+        setIsSyncingProfile(false);
+        return;
+      }
       if (isAuthenticated && auth0User) {
         setIsSyncingProfile(true);
         setUser({
@@ -132,7 +178,7 @@ export default function App() {
     };
 
     syncUserAndProfile();
-  }, [isAuthenticated, auth0User, setUser, hostel, setIsOnboarded, setProfile]);
+  }, [isAuthenticated, auth0User, setUser, hostel, setIsOnboarded, setProfile, isOnline]);
 
   // Sync current page with menuData availability
   useEffect(() => {
@@ -144,6 +190,10 @@ export default function App() {
   // Cloud Menu Sync Logic
   useEffect(() => {
     const syncCloudMenu = async () => {
+      if (!isOnline) {
+        if (syncStatus !== 'idle') setSyncStatus({ isSyncing: false, syncStatus: 'idle' });
+        return;
+      }
       if (isSyncing || !isAuthenticated || !hostel || syncStatus !== 'idle') return;
       
       setSyncStatus({ isSyncing: true, syncStatus: 'syncing' });
@@ -193,7 +243,7 @@ export default function App() {
     };
 
     if (!isLoading) syncCloudMenu();
-  }, [isAuthenticated, isLoading, hostel, messType, setMenuData, setSyncStatus, isSyncing, syncStatus, setCloudMenuInfo]);
+  }, [isAuthenticated, isLoading, hostel, messType, setMenuData, setSyncStatus, isSyncing, syncStatus, setCloudMenuInfo, isOnline]);
 
   // 🔔 HIGH-DENSITY REALTIME BROADCASTS & ADMIN ALERTS
   useEffect(() => {
@@ -207,13 +257,17 @@ export default function App() {
       try {
         const histRes = await getAnnouncements();
         if (histRes.success && histRes.data) {
-          const state = useStore.getState();
-          const existingTitles = state.notifications.map(n => n.title);
+          const existingAnnIds = state.notifications
+            .filter(n => n.announcementId)
+            .map(n => n.announcementId);
           
           histRes.data.reverse().forEach(ann => {
-            const title = `📢 ${ann.title}`;
-            if (!existingTitles.includes(title)) {
-              state.addNotification(title, ann.content, { announcementId: ann.id });
+            if (!existingAnnIds.includes(ann.id)) {
+              const title = `📢 ${ann.title}`;
+              state.addNotification(title, ann.content, { 
+                id: `announcement-${ann.id}`,
+                announcementId: ann.id 
+              });
             }
           });
         }
@@ -457,6 +511,9 @@ export default function App() {
       
       {/* Notifications Hub */}
       <NotificationDrawer />
+
+      {/* Connection Recovery Indicator */}
+      <OfflineIndicator />
 
       {/* Header Navigation */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
