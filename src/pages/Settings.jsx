@@ -49,6 +49,7 @@ export default function Settings() {
   const [isRequesting, setIsRequesting] = useState(false);
   const moonIconRef = useRef(null);
   const sunIconRef = useRef(null);
+  const bellIconRef = useRef(null);
 
   const hostels = {
     male: ['MH1', 'MH2', 'MH3', 'MH4', 'MH5', 'MH6', 'MH7'],
@@ -603,7 +604,7 @@ export default function Settings() {
                   <CardTitle className="text-xl font-bold">Notifications</CardTitle>
                   <p className="text-xs text-muted-foreground mt-1">Configure your meal reminders.</p>
                 </div>
-                <BellRingIcon size={22} className="text-muted-foreground/50" />
+                <BellRingIcon ref={bellIconRef} size={22} className="text-muted-foreground/50" />
               </div>
             </CardHeader>
             <CardContent className="space-y-6 pt-6 relative group/notif">
@@ -629,16 +630,25 @@ export default function Settings() {
                     
                     {/* Stud Mode Card */}
                     <button
-                      onClick={() => setNotificationMode('stud')}
+                      onClick={() => { setNotificationMode('stud'); bellIconRef.current?.shake(); }}
                       className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-300 group ${
                         notificationMode === 'stud' 
-                          ? 'border-primary bg-primary/5 shadow-lg shadow-primary/5' 
-                          : 'border-border/40 hover:border-primary/20 bg-muted/20 hover:bg-muted/30'
+                          ? 'shadow-lg' 
+                          : 'border-border/40 hover:bg-muted/30 bg-muted/20'
                       }`}
+                      style={notificationMode === 'stud' ? {
+                        borderColor: accentHex,
+                        backgroundColor: `${accentHex}08`,
+                        boxShadow: `0 4px 24px ${accentHex}15`
+                      } : {}}
                     >
                       <div className="flex items-center gap-3 mb-2">
-                        <div className={`p-2 rounded-xl transition-colors ${notificationMode === 'stud' ? 'bg-muted/40 text-foreground' : 'bg-muted/40 text-muted-foreground group-hover:text-primary/60'}`}>
-                          <Dumbbell size={20} />
+                        <div 
+                          className="p-2 rounded-xl transition-colors"
+                          style={notificationMode === 'stud' ? { color: accentHex, backgroundColor: `${accentHex}15` } : {}}
+                        >
+                          {notificationMode !== 'stud' && <Dumbbell size={20} className="text-muted-foreground" />}
+                          {notificationMode === 'stud' && <Dumbbell size={20} />}
                         </div>
                         <h4 className="font-bold text-lg text-foreground">Stud Mode</h4>
                       </div>
@@ -649,16 +659,25 @@ export default function Settings() {
 
                     {/* Princess Mode Card */}
                     <button
-                      onClick={() => setNotificationMode('princess')}
+                      onClick={() => { setNotificationMode('princess'); bellIconRef.current?.shake(); }}
                       className={`w-full text-left p-5 rounded-2xl border-2 transition-all duration-300 group ${
                         notificationMode === 'princess' 
-                          ? 'border-primary bg-primary/5 shadow-lg shadow-primary/5' 
-                          : 'border-border/40 hover:border-primary/20 bg-muted/20 hover:bg-muted/30'
+                          ? 'shadow-lg' 
+                          : 'border-border/40 hover:bg-muted/30 bg-muted/20'
                       }`}
+                      style={notificationMode === 'princess' ? {
+                        borderColor: accentHex,
+                        backgroundColor: `${accentHex}08`,
+                        boxShadow: `0 4px 24px ${accentHex}15`
+                      } : {}}
                     >
                       <div className="flex items-center gap-3 mb-2">
-                        <div className={`p-2 rounded-xl transition-colors ${notificationMode === 'princess' ? 'bg-muted/40 text-foreground' : 'bg-muted/40 text-muted-foreground group-hover:text-primary/60'}`}>
-                          <Crown size={20} />
+                        <div 
+                          className="p-2 rounded-xl transition-colors"
+                          style={notificationMode === 'princess' ? { color: accentHex, backgroundColor: `${accentHex}15` } : {}}
+                        >
+                          {notificationMode !== 'princess' && <Crown size={20} className="text-muted-foreground" />}
+                          {notificationMode === 'princess' && <Crown size={20} />}
                         </div>
                         <h4 className="font-bold text-lg text-foreground">Princess Mode</h4>
                       </div>
