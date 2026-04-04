@@ -116,7 +116,7 @@ export default function Settings() {
         setCoordinatorRequest(res.data[0]);
         addNotification(
           "Authority Protocol Initiated 🛡️", 
-          "Your request to become a Coordinator is now under review by the High Council."
+          "Your request to become a Coordinator is now under review by the Admins."
         );
         setNotificationPending(true);
       }
@@ -357,7 +357,7 @@ export default function Settings() {
                              <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-foreground/90">Administrative Authority</h4>
                            </div>
                            <p className="text-xs sm:text-sm text-balance text-muted-foreground leading-relaxed">
-                             Request high-level clearance to manage mess menus and global broadcasts. Your petition undergoes an automated security audit.
+                             Request to manage mess menus and global broadcasts. Your request undergoes an automated security audit.
                            </p>
                          </div>
 
@@ -385,7 +385,7 @@ export default function Settings() {
                                  ) : (
                                    <>
                                      <Crown size={18} />
-                                     <span>{coordinatorRequest?.status === 'rejected' ? 'Restart Protocol' : 'Initiate Protocol'}</span>
+                                     <span>{coordinatorRequest?.status === 'rejected' ? 'Send Request Again' : 'Send Request'}</span>
                                    </>
                                  )}
                                </Button>
@@ -398,7 +398,7 @@ export default function Settings() {
                      {/* Information Disclaimer Footer */}
                      <div className="px-8 py-4 bg-muted/30 border-t border-border/40 backdrop-blur-md">
                        <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.25em] text-center sm:text-left">
-                         Verification required via high council audit channel
+                         Verification required via Admins 
                        </p>
                      </div>
                    </div>
