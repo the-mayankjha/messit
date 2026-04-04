@@ -133,13 +133,20 @@ export default function Dashboard() {
       
       try {
         setIsCapturing(true);
-        
-        // Brief delay to ensure UI updates if needed
-        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Show the brand footer directly in the DOM just before capture.
+        // Direct mutation is the only reliable way — no React re-render needed.
+        const footerEl = cardRef.current?.querySelector('.brand-footer');
+        if (footerEl) {
+          footerEl.style.height = '40px';
+          footerEl.style.opacity = '1';
+          footerEl.style.paddingTop = '10px';
+          footerEl.style.paddingBottom = '10px';
+        }
 
         if (cardRef.current) {
           const dataUrl = await toPng(cardRef.current, {
-            backgroundColor: 'transparent', // Let the capture-frame handle background
+            backgroundColor: 'transparent',
             pixelRatio: 3,
             cacheBust: true,
             filter: (node) => {
@@ -170,24 +177,23 @@ export default function Dashboard() {
       } catch (error) {
         console.error('Sharing failed:', error);
       } finally {
+        // Restore footer to hidden state
+        const footerEl = cardRef.current?.querySelector('.brand-footer');
+        if (footerEl) {
+          footerEl.style.height = '0px';
+          footerEl.style.opacity = '0';
+          footerEl.style.paddingTop = '0';
+          footerEl.style.paddingBottom = '0';
+        }
         setIsCapturing(false);
       }
     };
 
     return (
       <div ref={cardRef} className="relative p-6 -m-6 bg-transparent rounded-[2.5rem]">
-        {/* Branding Footer: Only visible during capture or when isCapturing is true */}
-        <div className={`absolute bottom-2 left-0 right-0 flex flex-col items-center gap-1 opacity-0 transition-opacity duration-300 pointer-events-none ${isCapturing ? 'opacity-100' : 'hidden'}`}>
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60">MESSIT &mdash; Never miss it</p>
-          </div>
-          <p className="text-[8px] font-bold text-muted-foreground/30 uppercase tracking-[0.2em]">Version {__APP_VERSION__}</p>
-        </div>
-
         <Card className="h-full flex flex-col group relative overflow-hidden">
           {isCapturing && (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-300 capture-exclude">
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-md animate-in fade-in duration-300 capture-exclude">
               <div className="flex flex-col items-center gap-3 scale-90 sm:scale-100">
                 <div className="relative">
                   <SendIcon size={32} strokeWidth={1.2} className="text-foreground/80" isAnimated={true} />
@@ -196,6 +202,7 @@ export default function Dashboard() {
               </div>
             </div>
           )}
+
           <CardHeader 
             className={`pb-3 border-b transition-colors ${meal.status === 'Ongoing' ? 'border-primary/20' : 'border-border/50 group-hover:bg-muted/10'}`}
             style={{ backgroundColor: meal.status === 'Ongoing' ? `${accentHex}15` : undefined }}
@@ -268,9 +275,21 @@ export default function Dashboard() {
               </div>
             )}
           </CardContent>
-          
-          {/* Subtle padding at the bottom to ensure branding fits nicely during capture */}
-          {isCapturing && <div className="h-16 pt-2" />}
+
+          {/* Premium Band Footer: Invisible in the app, revealed via direct DOM mutation during capture only */}
+          <div 
+            className="brand-footer border-t border-border/50 bg-muted/20 flex items-center justify-center px-6 overflow-hidden"
+            style={{ height: '0px', opacity: 0, paddingTop: 0, paddingBottom: 0 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-foreground/60">MESSIT &mdash; Never miss it</p>
+              </div>
+              <div className="w-px h-3 bg-border/40" />
+              <p className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-[0.1em]">v{__APP_VERSION__} (STABLE)</p>
+            </div>
+          </div>
         </Card>
       </div>
     );
