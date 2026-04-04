@@ -1,11 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   AlertCircle, Check, RefreshCw, Cloud, Database, 
   Sparkles, ShieldCheck, ChevronRight, UserCheck, 
   UserX, Megaphone, FlaskConical, Send, History,
   LayoutDashboard, Users, Zap, BellRing, Settings2,
   Crown, Code2, Handshake, AlertTriangle, Trash2, X,
-  ShieldAlert, ShieldOff
+  ShieldAlert, ShieldOff, ChevronDown, Mail, Building2, Hash, Utensils
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store/useStore';
@@ -17,11 +17,12 @@ import {
   getPendingRequests, updateRequestStatus, 
   uploadMessMenu, createAnnouncement,
   updateAnnouncement, deleteAnnouncement,
-  getAnnouncements,
+  getAnnouncements, getAllUsers,
   supabase, getPrivilegedUsers, revokeUserRole
 } from '../lib/supabase';
 import { parseExcelMenu } from '../utils/excelParser';
 import { requestNotificationPermission, sendNotification } from '../utils/notifier';
+import { SlidersHorizontalIcon } from '../components/ui/icons/SlidersHorizontalIcon';
 
 export default function AdminDashboard() {
   const { 
@@ -38,9 +39,17 @@ export default function AdminDashboard() {
   // Identity Desk State
   const [requests, setRequests] = useState([]);
   const [privilegedUsers, setPrivilegedUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [rosterLoading, setRosterLoading] = useState(false);
+  const [allUsersLoading, setAllUsersLoading] = useState(false);
+  const [expandedUserEmail, setExpandedUserEmail] = useState(null);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [hostelFilter, setHostelFilter] = useState('All');
+  const [messFilter, setMessFilter] = useState('All');
+  const [isUserFiltersOpen, setIsUserFiltersOpen] = useState(false);
   const [warnTarget, setWarnTarget] = useState(null);   // { email, name, role }
   const [revokeTarget, setRevokeTarget] = useState(null); // { email, name, role }
+  const userFilterIconRef = useRef(null);
   
   // Mess Ops State
   const [dragActive, setDragActive] = useState(false);
@@ -58,6 +67,9 @@ export default function AdminDashboard() {
   const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   const effectiveTheme = theme === 'system' ? systemTheme : theme;
   const accentHex = ACCENT_COLORS[accentColor]?.[effectiveTheme] || ACCENT_COLORS.Blue[effectiveTheme];
+  const hostelFilters = ['All', 'MH', 'LH'];
+  const messFilters = ['All', 'Veg', 'Non-Veg', 'Special'];
+  const hasActiveUserFilters = hostelFilter !== 'All' || messFilter !== 'All';
 
   const adminTabs = [
     { id: 'identity', label: 'Identity Desk', icon: Users, roles: ['Admin'] },
@@ -72,6 +84,9 @@ export default function AdminDashboard() {
     }
     if (activeTab === 'ops') {
       fetchAnnouncements();
+    }
+    if (activeTab === 'lab' && ['Developer', 'Admin'].includes(role)) {
+      fetchAllProfiles();
     }
   }, [activeTab]);
 
@@ -96,6 +111,42 @@ export default function AdminDashboard() {
     if (res.success) setPrivilegedUsers(res.data);
     setRosterLoading(false);
   };
+
+  const fetchAllProfiles = async () => {
+    setAllUsersLoading(true);
+    const res = await getAllUsers();
+    if (res.success) setAllUsers(res.data);
+    setAllUsersLoading(false);
+  };
+
+  const filteredUsers = useMemo(() => {
+    const query = userSearchQuery.trim().toLowerCase();
+
+    return allUsers.filter((profile) => {
+      const name = (profile.name || '').toLowerCase();
+      const email = (profile.email || '').toLowerCase();
+      const hostel = profile.hostel || '';
+      const messType = profile.mess_type || '';
+
+      const matchesQuery =
+        !query ||
+        name.includes(query) ||
+        email.includes(query) ||
+        hostel.toLowerCase().includes(query) ||
+        messType.toLowerCase().includes(query);
+
+      const matchesHostel =
+        hostelFilter === 'All' ||
+        (hostelFilter === 'MH' && hostel.startsWith('MH')) ||
+        (hostelFilter === 'LH' && hostel.startsWith('LH'));
+
+      const matchesMess =
+        messFilter === 'All' ||
+        messType === messFilter;
+
+      return matchesQuery && matchesHostel && matchesMess;
+    });
+  }, [allUsers, userSearchQuery, hostelFilter, messFilter]);
 
   const handleRevoke = async () => {
     if (!revokeTarget) return;
@@ -822,6 +873,302 @@ export default function AdminDashboard() {
                    <Button variant="ghost" className="w-full text-[10px] text-muted-foreground/30 font-black uppercase tracking-[0.4em]">Dump Store State</Button>
                 </CardContent>
               </Card>
+
+              <div className="sm:col-span-2">
+                <Card className="border-none shadow-xl">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <Users size={22} style={{ color: accentHex }} />
+                        <span>User Section</span>
+                      </div>
+                      <span
+                        className="text-[10px] font-black uppercase tracking-[0.3em]"
+                        style={{ color: `${accentHex}90` }}
+                      >
+                        {filteredUsers.length} Profiles
+                      </span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-5 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <Input
+                            value={userSearchQuery}
+                            onChange={(e) => setUserSearchQuery(e.target.value)}
+                            placeholder="Search by name, email, hostel or mess..."
+                            className="rounded-[1.4rem]"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            userFilterIconRef.current?.startAnimation();
+                            setIsUserFiltersOpen((prev) => !prev);
+                            window.setTimeout(() => {
+                              userFilterIconRef.current?.stopAnimation();
+                            }, 550);
+                          }}
+                          className="h-[58px] w-[58px] rounded-[1.2rem] flex items-center justify-center transition-all shadow-sm"
+                          style={isUserFiltersOpen || hasActiveUserFilters ? {
+                            backgroundColor: `${accentHex}14`,
+                            color: accentHex,
+                          } : {
+                            backgroundColor: effectiveTheme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.9)',
+                          }}
+                          title="Toggle filters"
+                        >
+                          <SlidersHorizontalIcon ref={userFilterIconRef} size={20} />
+                        </button>
+                      </div>
+
+                      <AnimatePresence initial={false}>
+                        {isUserFiltersOpen && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0, y: -6 }}
+                            animate={{ opacity: 1, height: 'auto', y: 0 }}
+                            exit={{ opacity: 0, height: 0, y: -6 }}
+                            transition={{ duration: 0.22, ease: 'easeOut' }}
+                            className="overflow-hidden"
+                          >
+                            <div
+                              className="rounded-[1.35rem] border px-3 py-3 sm:px-4 sm:py-3.5"
+                              style={{
+                                backgroundColor: effectiveTheme === 'dark' ? 'rgba(255,255,255,0.025)' : `${accentHex}05`,
+                                borderColor: `${accentHex}20`,
+                              }}
+                            >
+                              <div className="space-y-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-[64px_minmax(0,1fr)] gap-2 sm:gap-3 items-start">
+                                  <span className="text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/55 pt-1.5">
+                                    Hostel
+                                  </span>
+                                  <div className="flex flex-wrap gap-2">
+                                    {hostelFilters.map((filter) => {
+                                      const active = hostelFilter === filter;
+                                      return (
+                                        <button
+                                          key={filter}
+                                          type="button"
+                                          onClick={() => setHostelFilter(filter)}
+                                          className="min-w-[72px] px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-[0.18em] transition-all"
+                                          style={active ? {
+                                            backgroundColor: `${accentHex}14`,
+                                            borderColor: `${accentHex}35`,
+                                            color: accentHex,
+                                          } : undefined}
+                                        >
+                                          {filter}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-[64px_minmax(0,1fr)] gap-2 sm:gap-3 items-start">
+                                  <span className="text-[9px] font-black uppercase tracking-[0.22em] text-muted-foreground/55 pt-1.5">
+                                    Mess
+                                  </span>
+                                  <div className="flex flex-wrap gap-2">
+                                    {messFilters.map((filter) => {
+                                      const active = messFilter === filter;
+                                      return (
+                                        <button
+                                          key={filter}
+                                          type="button"
+                                          onClick={() => setMessFilter(filter)}
+                                          className="min-w-[78px] px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-[0.18em] transition-all"
+                                          style={active ? {
+                                            backgroundColor: `${accentHex}14`,
+                                            borderColor: `${accentHex}35`,
+                                            color: accentHex,
+                                          } : undefined}
+                                        >
+                                          {filter}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {allUsersLoading ? (
+                      <div className="py-16 flex flex-col items-center gap-4 text-muted-foreground/30">
+                        <RefreshCw size={36} className="animate-spin" style={{ color: accentHex }} />
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em]">Loading User Graph...</p>
+                      </div>
+                    ) : filteredUsers.length === 0 ? (
+                      <div className="py-12 text-center rounded-[2rem] border-2 border-dashed border-border/10 bg-muted/5">
+                        <p className="text-xs font-bold text-muted-foreground/30 uppercase tracking-widest">No users match this search or filter.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {filteredUsers.map((profile, index) => {
+                          const isExpanded = expandedUserEmail === profile.email;
+                          const isCurrentUser = profile.email === user?.email;
+                          const displayName = profile.name || profile.email?.split('@')[0] || 'Unknown User';
+                          const initials = displayName
+                            .split(' ')
+                            .filter(Boolean)
+                            .slice(0, 2)
+                            .map(part => part[0]?.toUpperCase())
+                            .join('') || 'U';
+
+                          return (
+                            <motion.div
+                              key={profile.email || index}
+                              initial={{ opacity: 0, y: 12 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.03 }}
+                              className="rounded-[1.5rem] border border-border/40 bg-secondary/10 overflow-hidden shadow-sm"
+                              style={{
+                                backgroundColor: isExpanded ? `${accentHex}08` : undefined,
+                                borderColor: isExpanded ? `${accentHex}35` : undefined,
+                              }}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setExpandedUserEmail(isExpanded ? null : profile.email)}
+                                className="w-full text-left p-3.5 sm:p-4 transition-all hover:bg-background/40"
+                              >
+                                <div className="flex items-center gap-4">
+                                  <div
+                                    className="w-12 h-12 rounded-[1.1rem] border flex items-center justify-center font-black text-sm shadow-md flex-shrink-0"
+                                    style={{
+                                      backgroundColor: `${accentHex}15`,
+                                      borderColor: `${accentHex}30`,
+                                      color: accentHex,
+                                    }}
+                                  >
+                                    {profile.picture ? (
+                                      <img
+                                        src={profile.picture}
+                                        alt={displayName}
+                                        className="w-full h-full object-cover rounded-2xl"
+                                      />
+                                    ) : (
+                                      initials
+                                    )}
+                                  </div>
+
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <h4 className="font-bold text-[15px] truncate">{displayName}</h4>
+                                      {isCurrentUser && (
+                                        <span
+                                          className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border"
+                                          style={{
+                                            backgroundColor: `${accentHex}12`,
+                                            color: accentHex,
+                                            borderColor: `${accentHex}28`,
+                                          }}
+                                        >
+                                          You
+                                        </span>
+                                      )}
+                                      {profile.role && profile.role !== 'None' && (
+                                        <span
+                                          className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border"
+                                          style={{
+                                            backgroundColor: `${accentHex}10`,
+                                            color: accentHex,
+                                            borderColor: `${accentHex}25`,
+                                          }}
+                                        >
+                                          {profile.role}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <p className="text-[13px] text-muted-foreground truncate">{profile.email}</p>
+                                  </div>
+
+                                  <div className="flex items-center gap-3 flex-shrink-0">
+                                    <div className="hidden sm:flex flex-col items-end">
+                                      <span className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/45">
+                                        Tap To {isExpanded ? 'Collapse' : 'Expand'}
+                                      </span>
+                                      <span className="text-[9px] text-muted-foreground/50 mt-0.5">
+                                        {profile.hostel || 'Profile details'}
+                                      </span>
+                                    </div>
+                                    <motion.div
+                                      animate={{ rotate: isExpanded ? 180 : 0 }}
+                                      transition={{ duration: 0.2 }}
+                                      className="w-9 h-9 rounded-[0.95rem] flex items-center justify-center"
+                                      style={{
+                                        color: accentHex,
+                                        backgroundColor: `${accentHex}08`,
+                                      }}
+                                    >
+                                      <ChevronDown size={18} />
+                                    </motion.div>
+                                  </div>
+                                </div>
+                              </button>
+
+                              <AnimatePresence initial={false}>
+                                {isExpanded && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.24, ease: 'easeOut' }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="px-3.5 sm:px-4 pb-4">
+                                    <div
+                                      className="rounded-[1.2rem] border p-3 sm:p-3.5"
+                                      style={{
+                                        backgroundColor: effectiveTheme === 'dark' ? 'rgba(255,255,255,0.03)' : `${accentHex}05`,
+                                        borderColor: `${accentHex}20`,
+                                      }}
+                                    >
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                          {[
+                                            { label: 'Email', value: profile.email || 'Not available', icon: Mail },
+                                            { label: 'Hostel', value: profile.hostel || 'Not set', icon: Building2 },
+                                            { label: 'Room', value: profile.room_number || 'Not set', icon: Hash },
+                                            { label: 'Mess', value: profile.mess_type || 'Not set', icon: Utensils },
+                                            { label: 'Gender', value: profile.gender || 'Not set', icon: Users },
+                                            { label: 'Role', value: profile.role || 'None', icon: ShieldCheck },
+                                          ].map(({ label, value, icon: DetailIcon }) => (
+                                            <div
+                                              key={label}
+                                              className="rounded-[0.95rem] border px-3 py-2.5"
+                                              style={{
+                                                backgroundColor: effectiveTheme === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.75)',
+                                                borderColor: `${accentHex}18`,
+                                              }}
+                                            >
+                                              <div className="flex items-center gap-2 mb-1">
+                                                <DetailIcon size={13} style={{ color: accentHex }} />
+                                                <span className="text-[9px] font-black uppercase tracking-[0.18em] text-muted-foreground/70">
+                                                  {label}
+                                                </span>
+                                              </div>
+                                              <p className="text-[13px] font-semibold break-words leading-snug">{value}</p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
 

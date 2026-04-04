@@ -92,7 +92,8 @@ export default function Settings() {
       await syncSupabaseProfile({
         ...updatedProfile,
         email: user?.email,
-        name: user?.name
+        name: user?.name,
+        picture: user?.picture || auth0User?.picture || null,
       });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);

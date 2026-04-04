@@ -76,7 +76,8 @@ export default function Onboarding() {
       ...profileData,
       gender: calculatedGender,
       email: auth0User?.email || email,
-      name: auth0User?.name || email?.split('@')[0] || 'User'
+      name: auth0User?.name || email?.split('@')[0] || 'User',
+      picture: auth0User?.picture || null,
     };
 
     setProfile(finalizedProfile);

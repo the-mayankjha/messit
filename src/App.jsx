@@ -149,10 +149,31 @@ export default function App() {
         // Always fetch the latest profile from Supabase for authenticated users
         // to ensure roles, names, and preferences are perfectly in sync.
         try {
-          const { getSupabaseProfile } = await import('./lib/supabase');
+          const { getSupabaseProfile, syncSupabaseProfile } = await import('./lib/supabase');
           const { success, data } = await getSupabaseProfile(auth0User.email);
-          
+
           if (success && data) {
+            const nextProfile = {
+              ...data,
+              email: auth0User.email,
+              name: auth0User.name,
+              picture: auth0User.picture || data.picture || null,
+            };
+
+            const shouldRefreshProfile =
+              data.name !== auth0User.name ||
+              data.picture !== auth0User.picture;
+
+            if (shouldRefreshProfile) {
+              const syncRes = await syncSupabaseProfile(nextProfile);
+              if (syncRes.success && Array.isArray(syncRes.data) && syncRes.data[0]) {
+                const syncedProfile = syncRes.data[0];
+                nextProfile.roomNumber = syncedProfile.room_number ?? nextProfile.roomNumber;
+                nextProfile.messType = syncedProfile.mess_type ?? nextProfile.messType;
+                nextProfile.picture = syncedProfile.picture ?? nextProfile.picture;
+              }
+            }
+
             // Check for role change to notify student
             if (role === 'None' && data.role !== 'None') {
               const { addNotification, setNotificationPending } = useStore.getState();
@@ -163,7 +184,7 @@ export default function App() {
               setNotificationPending(true);
             }
             
-            setProfile(data);
+            setProfile(nextProfile);
             setIsOnboarded(true);
           } else if (!hostel) {
             // New user without a profile in Supabase

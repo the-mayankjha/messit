@@ -5,29 +5,66 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+async function upsertProfileRecord(payload) {
+  return supabase
+    .from('profiles')
+    .upsert(payload, {
+      onConflict: 'email'
+    })
+    .select();
+}
+
 /**
  * Sync user profile to Supabase 'profiles' table.
  * Uses an upsert strategy based on the user's email.
  */
 export async function syncSupabaseProfile(profileData) {
   try {
-    const { data, error } = await supabase
-      .from('profiles')
-      .upsert({
-        email: profileData.email,
-        name: profileData.name,
-        hostel: profileData.hostel,
-        room_number: profileData.roomNumber,
-        mess_type: profileData.messType,
-        gender: profileData.gender,
-        role: profileData.role || 'None',
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'email'
-      })
-      .select();
+    const payload = {
+      email: profileData.email,
+      name: profileData.name,
+      hostel: profileData.hostel,
+      room_number: profileData.roomNumber,
+      mess_type: profileData.messType,
+      gender: profileData.gender,
+      role: profileData.role || 'None',
+      picture: profileData.picture || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    let { data, error } = await upsertProfileRecord(payload);
+
+    // Backward-compatible fallback in case the profiles table
+    // does not yet have a `picture` column.
+    if (error && payload.picture) {
+      const retryPayload = { ...payload };
+      delete retryPayload.picture;
+      const retry = await upsertProfileRecord(retryPayload);
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) throw error;
+
+    // Some Supabase setups behave more reliably when the avatar URL
+    // is updated explicitly after the conflict-based upsert.
+    if (profileData.picture) {
+      const { data: pictureData, error: pictureError } = await supabase
+        .from('profiles')
+        .update({
+          picture: profileData.picture,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('email', profileData.email)
+        .select();
+
+      if (!pictureError && pictureData) {
+        data = pictureData;
+      } else if (pictureError) {
+        console.error('Supabase Picture Sync Error:', pictureError.message);
+      }
+    }
+
     return { success: true, data };
   } catch (err) {
     console.error("Supabase Sync Error:", err.message);
@@ -341,6 +378,24 @@ export async function getPrivilegedUsers() {
     return { success: true, data };
   } catch (err) {
     console.error('Fetch Privileged Users Error:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Fetch all users from the profiles table for developer visibility tools.
+ */
+export async function getAllUsers() {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (err) {
+    console.error('Fetch All Users Error:', err.message);
     return { success: false, error: err.message };
   }
 }
