@@ -8,11 +8,12 @@ import {
   Check, Crown, Dumbbell, Bell, 
   User, Mail, Building, Key, ShieldCheck,
   ShieldAlert, RefreshCw, Save, UserX, Lock,
-  Sparkles, Cloud, Megaphone, BellRing, LogIn, Download
+  Sparkles, Cloud, Megaphone, BellRing, LogIn
 } from 'lucide-react';
 import { GoogleIcon } from '../components/ui/icons/GoogleIcon';
 import { GithubIcon } from '../components/ui/icons/GithubIcon';
 import { BellRingIcon } from '../components/ui/icons/BellRingIcon';
+import { DownloadIcon } from '../components/ui/icons/DownloadIcon';
 import { MoonIcon } from '../components/ui/icons/MoonIcon';
 import { SunIcon } from '../components/ui/icons/SunIcon';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -52,6 +53,7 @@ export default function Settings() {
   const moonIconRef = useRef(null);
   const sunIconRef = useRef(null);
   const bellIconRef = useRef(null);
+  const downloadIconRef = useRef(null);
 
   const hostels = {
     male: ['MH1', 'MH2', 'MH3', 'MH4', 'MH5', 'MH6', 'MH7'],
@@ -180,6 +182,7 @@ export default function Settings() {
 
     setIsUpdatingApp(true);
     setUpdateMessage('Checking for the latest build...');
+    downloadIconRef.current?.startAnimation();
 
     try {
       let reloaded = false;
@@ -217,6 +220,7 @@ export default function Settings() {
       console.error('PWA update failed:', err);
       setUpdateMessage('Unable to update automatically. Please reload the app.');
       setIsUpdatingApp(false);
+      downloadIconRef.current?.stopAnimation();
       return;
     }
   };
@@ -784,10 +788,13 @@ export default function Settings() {
                   <p className="text-xs text-muted-foreground mt-1">Download the newest PWA build and restart into it.</p>
                 </div>
                 <div
-                  className="w-10 h-10 rounded-2xl border flex items-center justify-center"
-                  style={{ backgroundColor: `${accentHex}10`, borderColor: `${accentHex}20`, color: accentHex }}
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                  style={{
+                    backgroundColor: 'transparent',
+                    color: effectiveTheme === 'dark' ? '#ffffff' : '#171717'
+                  }}
                 >
-                  <Download size={18} />
+                  <DownloadIcon size={18} />
                 </div>
               </div>
             </CardHeader>
@@ -832,12 +839,12 @@ export default function Settings() {
               >
                 {isUpdatingApp ? (
                   <>
-                    <RefreshCw size={16} className="mr-2 animate-spin" />
+                    <DownloadIcon ref={downloadIconRef} size={16} className="mr-2" />
                     Updating App
                   </>
                 ) : (
                   <>
-                    <Download size={16} className="mr-2" />
+                    <DownloadIcon ref={downloadIconRef} size={16} className="mr-2" />
                     Get Latest Version
                   </>
                 )}
