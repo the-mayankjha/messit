@@ -389,13 +389,15 @@ export default function App() {
 
   const needsOnboarding = isAuthenticated ? !hostel : !isOnboarded;
 
-  // ─── OFFLINE FAST-PASS ──────────────────────────────────────────
-  // If there's no network but we have cached data, skip the loading
-  // screen entirely and render the app from localStorage immediately.
+  // ─── SMART LOADING GATE ─────────────────────────────────────────
+  // Show the splash ONLY when there is no local cache at all.
+  // If the user is returning (has menuData + isOnboarded), go straight
+  // to the app and let Auth0 session check + Supabase sync run in the
+  // background silently. No unnecessary splash on every open.
   const isOfflineMode = !navigator.onLine && !isOnline;
   const hasLocalCache = !!menuData && isOnboarded;
 
-  if ((isLoading || isSyncingProfile) && !(isOfflineMode && hasLocalCache)) {
+  if ((isLoading || isSyncingProfile) && !hasLocalCache) {
     const loadingText = notificationMode === 'princess' 
       ? 'Cooking Delicious Meal for My Princess' 
       : 'Cooking you Delicious Meal';
