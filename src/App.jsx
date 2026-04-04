@@ -52,6 +52,8 @@ export default function App() {
     cloudMenuInfo,
     setCloudMenuInfo,
     addNotification,
+    updateNotification,
+    removeNotificationByAnnouncementId,
     isOnline,
     setIsOnline,
   } = useStore();
@@ -276,7 +278,7 @@ export default function App() {
         console.error("Historical Sync Error:", e);
       }
       
-      // 1. Global Announcements (For Everyone)
+      // 1. Global Announcements (For Everyone) — INSERT, UPDATE, DELETE
       announcementChannel = supabase.channel(`announcements-${Date.now()}`);
       announcementChannel
         .on(
@@ -285,10 +287,27 @@ export default function App() {
           (payload) => {
             const title = `📢 ${payload.new.title}`;
             const content = payload.new.content;
-            
-            // This now handles BOTH the PWA alert and the In-App Manager sync
             sendNotification(null, notificationMode, title, content);
-            
+            window.dispatchEvent(new CustomEvent('new-announcement'));
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'announcements' },
+          (payload) => {
+            // Sync edited announcement into the notification drawer in real-time
+            const { updateNotification } = useStore.getState();
+            updateNotification(payload.new.id, payload.new.title, payload.new.content);
+            window.dispatchEvent(new CustomEvent('new-announcement'));
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'announcements' },
+          (payload) => {
+            // Remove deleted announcement from the notification drawer immediately
+            const { removeNotificationByAnnouncementId } = useStore.getState();
+            removeNotificationByAnnouncementId(payload.old.id);
             window.dispatchEvent(new CustomEvent('new-announcement'));
           }
         )

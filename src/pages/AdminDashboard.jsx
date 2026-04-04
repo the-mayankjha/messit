@@ -163,10 +163,20 @@ export default function AdminDashboard() {
 
     if (res.success) {
       setSuccess(editingAnnouncement ? "Broadcast updated!" : "Broadcast sent to all students!");
+      // Optimistic update: immediately reflect change in the local list
+      if (editingAnnouncement) {
+        setAllAnnouncements(prev => prev.map(ann =>
+          ann.id === editingAnnouncement.id
+            ? { ...ann, title: announcementTitle, content: announcementBody }
+            : ann
+        ));
+      } else if (res.data) {
+        setAllAnnouncements(prev => [res.data, ...prev]);
+      }
       setAnnouncementTitle('');
       setAnnouncementBody('');
       setEditingAnnouncement(null);
-      fetchAnnouncements();
+      fetchAnnouncements(); // Sync from server for guaranteed consistency
       setTimeout(() => setSuccess(null), 3000);
     } else {
       setError(res.error);
@@ -183,13 +193,15 @@ export default function AdminDashboard() {
 
   const handleDeleteAnnouncement = async (id) => {
     if (!window.confirm("Are you sure you want to delete this broadcast?")) return;
+    // Optimistic: remove from list immediately
+    setAllAnnouncements(prev => prev.filter(ann => ann.id !== id));
     const res = await deleteAnnouncement(id);
     if (res.success) {
       setSuccess("Broadcast deleted.");
-      fetchAnnouncements();
       setTimeout(() => setSuccess(null), 3000);
     } else {
       setError(res.error);
+      fetchAnnouncements(); // Revert on failure
     }
   };
 

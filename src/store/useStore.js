@@ -79,6 +79,14 @@ export const useStore = create(
       removeNotification: (id) => set((state) => ({
         notifications: state.notifications.filter(n => n.id !== id)
       })),
+      updateNotification: (announcementId, title, body) => set((state) => ({
+        notifications: state.notifications.map(n =>
+          n.announcementId === announcementId ? { ...n, title: `📢 ${title}`, body } : n
+        )
+      })),
+      removeNotificationByAnnouncementId: (announcementId) => set((state) => ({
+        notifications: state.notifications.filter(n => n.announcementId !== announcementId)
+      })),
       clearNotifications: () => set({ notifications: [] }),
       markAllAsRead: () => set((state) => ({
         notifications: state.notifications.map(n => ({ ...n, read: true }))
