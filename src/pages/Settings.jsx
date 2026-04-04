@@ -705,11 +705,24 @@ export default function Settings() {
               >
                 Sign Out Securely
               </Button>
-              <div className="text-center space-y-1">
+              <div className="text-center space-y-1 mt-4">
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
                   App Version {__APP_VERSION__} (STABLE)
                 </p>
-                <p className="text-[9px] text-muted-foreground/40 font-medium whitespace-nowrap">Build: {__BUILD_DATE__}.{__BUILD_VARIANT__}</p>
+                <p className="text-[9px] text-muted-foreground/40 font-medium whitespace-nowrap">
+                  Build: {__BUILD_DATE__}.{__BUILD_VARIANT__}
+                </p>
+                <p className="text-[9px] text-muted-foreground/30 font-medium mt-3">
+                  Developed by{' '}
+                  <a 
+                    href="https://github.com/the-mayankjha/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="hover:text-muted-foreground underline underline-offset-2 decoration-muted-foreground/20 transition-colors"
+                  >
+                    Mayank Jha
+                  </a>
+                </p>
               </div>
           </div>
         </div>
