@@ -382,8 +382,8 @@ export default function Onboarding() {
                     }}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all duration-300 ${
                       tempHostelType === cat.id
-                        ? 'bg-white text-background shadow-lg' 
-                        : 'text-muted-foreground/60 hover:text-white hover:bg-secondary'
+                        ? 'bg-foreground text-background shadow-lg' 
+                        : 'text-muted-foreground/60 hover:text-foreground hover:bg-secondary/80'
                     }`}
                   >
                     <cat.icon size={14} />
@@ -409,8 +409,8 @@ export default function Onboarding() {
                         onClick={() => setProfileData({ ...profileData, hostel: h })}
                         className={`aspect-square sm:aspect-auto sm:py-5 rounded-xl text-[10px] font-black tracking-widest transition-all duration-300 ${
                           profileData.hostel === h 
-                            ? 'bg-white text-background shadow-lg' 
-                            : 'bg-secondary/40 text-muted-foreground/40 border border-border/50 hover:bg-secondary hover:text-white'
+                            ? 'bg-foreground text-background shadow-lg' 
+                            : 'bg-secondary/40 text-muted-foreground/50 border border-border/50 hover:bg-secondary hover:text-foreground'
                         }`}
                       >
                         {h}
@@ -424,14 +424,14 @@ export default function Onboarding() {
                 <Button 
                   onClick={() => setStep(2)}
                   disabled={!profileData.hostel}
-                  className="w-full h-16 rounded-2xl bg-primary text-white border border-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2 group shadow-xl"
+                  className="w-full h-16 rounded-2xl bg-foreground text-background font-bold border border-border/20 transition-all active:scale-95 flex items-center justify-center gap-2 group shadow-xl disabled:opacity-50"
                 >
                   <span className="font-bold text-lg">Confirm Choice</span>
                   <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                 </Button>
                 <button 
                   onClick={() => setStep(0)}
-                  className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 hover:text-white transition-colors"
+                  className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 hover:text-foreground transition-colors"
                 >
                   Back to Security
                 </button>
@@ -471,8 +471,8 @@ export default function Onboarding() {
                       onClick={() => setProfileData({ ...profileData, messType: type })}
                       className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all duration-300 ${
                         profileData.messType === type 
-                          ? 'bg-white text-background shadow-lg' 
-                          : 'text-muted-foreground/40 hover:text-white hover:bg-secondary'
+                          ? 'bg-foreground text-background shadow-lg' 
+                          : 'text-muted-foreground/40 hover:text-foreground hover:bg-secondary/80'
                       }`}
                     >
                       {type.toUpperCase()}
@@ -494,7 +494,7 @@ export default function Onboarding() {
                 <Button 
                   onClick={handleFinalizeProfile}
                   disabled={isSubmitting}
-                  className="w-full h-16 rounded-2xl bg-white hover:bg-white/95 text-background transition-all active:scale-95 flex items-center justify-center gap-2 group shadow-xl"
+                  className="w-full h-16 rounded-2xl bg-foreground hover:opacity-90 text-background transition-all active:scale-95 flex items-center justify-center gap-2 group shadow-xl"
                 >
                   <span className="font-black text-xs tracking-[0.2em]">
                     {isSubmitting ? 'SYNCING...' : 'LAUNCH MESSIT'}
@@ -503,7 +503,7 @@ export default function Onboarding() {
                 </Button>
                 <button 
                   onClick={() => setStep(1)}
-                  className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 hover:text-white transition-colors"
+                  className="text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 hover:text-foreground transition-colors"
                 >
                   Change Campus Location
                 </button>
