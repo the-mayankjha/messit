@@ -356,7 +356,7 @@ export default function Dashboard() {
                       className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg border"
                       style={{ backgroundColor: `${accentHex}20`, color: accentHex, borderColor: `${accentHex}30` }}
                     >
-                      <Megaphone size={20} className="animate-bounce" />
+                      <Megaphone size={20} className="animate-bounce mt-1" />
                     </div>
                     <div className="min-w-0 pr-8">
                        <h4 className="text-[10px] font-black uppercase tracking-[0.25em] mb-1.5" style={{ color: accentHex }}>Latest Broadcast</h4>
