@@ -18,7 +18,7 @@ import { SunIcon } from '../components/ui/icons/SunIcon';
 import { useAuth0 } from '@auth0/auth0-react';
 import { requestNotificationPermission, sendNotification } from '../utils/notifier';
 import { ACCENT_COLORS } from '../constants/colors';
-import { submitCoordinatorRequest, getUserCoordinatorRequest } from '../lib/supabase';
+import { submitCoordinatorRequest, getUserCoordinatorRequest, getSupabaseProfile } from '../lib/supabase';
 
 export default function Settings() {
   const { logout, loginWithRedirect, user: auth0User, isAuthenticated } = useAuth0();
@@ -107,6 +107,17 @@ export default function Settings() {
     }
   }, [user?.email]);
 
+  // Sync real role from Supabase on mount
+  useEffect(() => {
+    if (user?.email) {
+      getSupabaseProfile(user.email).then(res => {
+        if (res.success && res.data?.role && res.data.role !== 'None') {
+          setProfile({ role: res.data.role });
+        }
+      });
+    }
+  }, [user?.email]);
+
   const handleRequestCoordinator = async () => {
     if (!user?.email || !user?.name || !hostel) return;
     setIsRequesting(true);
@@ -178,10 +189,19 @@ export default function Settings() {
             <div className="min-w-0">
               <p className="font-bold text-sm leading-tight truncate">{user?.name}</p>
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 truncate">
-                  {role === 'None' || !role ? 'STUDENT' : role.toUpperCase()}
-                </p>
+                {(() => {
+                  const displayRole = !role || role === 'None' ? 'Student' : role;
+                  const dotColor = role === 'Admin' ? '#f59e0b' : role === 'Coordinator' ? accentHex : '#22c55e';
+                  const textColor = role === 'Admin' ? '#f59e0b' : role === 'Coordinator' ? accentHex : undefined;
+                  return (
+                    <>
+                      <span className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0" style={{ backgroundColor: dotColor }} />
+                      <p className="text-[10px] font-bold uppercase tracking-widest truncate" style={{ color: textColor || undefined }} >
+                        <span className={!textColor ? 'text-muted-foreground/60' : ''}>{displayRole}</span>
+                      </p>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -361,7 +381,7 @@ export default function Settings() {
                            </p>
                          </div>
 
-                         <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
                            {coordinatorRequest && coordinatorRequest.status !== 'rejected' ? (
                              <div 
                                className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border backdrop-blur-xl flex items-center gap-3 shadow-sm ${
@@ -374,7 +394,7 @@ export default function Settings() {
                                {coordinatorRequest.status}
                              </div>
                            ) : (
-                             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+                             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full sm:w-auto">
                                <Button 
                                  onClick={handleRequestCoordinator}
                                  disabled={isRequesting}
@@ -394,14 +414,13 @@ export default function Settings() {
                          </div>
                        </div>
                      </div>
-                     
-                     {/* Information Disclaimer Footer */}
-                     <div className="px-8 py-4 bg-muted/30 border-t border-border/40 backdrop-blur-md">
-                       <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.25em] text-center sm:text-left">
-                         Verification required via Admins 
-                       </p>
-                     </div>
-                   </div>
+                      <div className="flex flex-wrap items-center gap-3 mb-2 px-8 pb-6">
+                        <span className="inline-flex items-center gap-1.5 text-[9px] font-bold text-muted-foreground/40 uppercase tracking-[0.25em]">
+                          <ShieldCheck size={10} className="shrink-0" />
+                          Verification required via Admins
+                        </span>
+                      </div>
+                    </div>
                  )}
               </div>
 

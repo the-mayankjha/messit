@@ -58,7 +58,7 @@ export default function NotificationDrawer() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 h-full w-[min(400px,100%)] bg-background border-l border-border z-[70] shadow-2xl flex flex-col"
+            className="fixed right-0 top-0 h-full w-[min(400px,100%)] bg-background border-l border-border z-[70] shadow-2xl flex flex-col overflow-x-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-border bg-secondary/30">
@@ -80,7 +80,7 @@ export default function NotificationDrawer() {
             </div>
 
             {/* List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3 custom-scrollbar">
               <AnimatePresence mode="popLayout" initial={false}>
                 {notifications.length > 0 ? (
                   notifications.map((notif) => (
