@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
 import { useStore } from '../store/useStore';
 import { useAuth0 } from '@auth0/auth0-react';
 import { ACCENT_COLORS } from '../constants/colors';
@@ -239,16 +239,12 @@ export default function Dashboard() {
                       }`}
                       style={{ 
                         backgroundColor: meal.status === 'Done'
-                          ? 'rgba(128,128,128,0.15)'
-                          : effectiveTheme === 'dark'
-                            ? 'rgba(255,255,255,0.08)'
-                            : (meal.status === 'Ongoing' ? accentHex : `${accentHex}25`),
+                          ? 'rgba(128,128,128,0.12)'
+                          : `${accentHex}15`,
                         color: meal.status === 'Done'
-                          ? (effectiveTheme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)')
-                          : effectiveTheme === 'dark'
-                            ? accentHex
-                            : '#fff',
-                        border: meal.status !== 'Done' && effectiveTheme === 'dark' ? `1px solid ${accentHex}40` : undefined
+                          ? (effectiveTheme === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)')
+                          : accentHex,
+                        border: meal.status !== 'Done' ? `1px solid ${accentHex}35` : undefined
                       }}
                     >
                       {meal.status}
@@ -417,6 +413,7 @@ export default function Dashboard() {
               <ChevronLeftIcon size={20} className="w-5 h-5" />
             </button>
             
+            <LayoutGroup id="day-selector">
             <div className="flex-grow grid grid-cols-7 gap-1 sm:gap-2">
               {weekDays.map(date => {
                 const isSelected = isSameDay(date, selectedDate);
@@ -426,29 +423,33 @@ export default function Dashboard() {
                   <div 
                     key={date.toISOString()}
                     onClick={() => setSelectedDate(date)}
-                    className={`flex flex-col items-center justify-center py-2 sm:py-3 cursor-pointer transition-all duration-300 relative overflow-hidden group/day ${
-                      isSelected
-                        ? "bg-secondary/60 rounded-2xl shadow-inner border border-border/40"
-                        : "bg-transparent hover:bg-muted/10 rounded-2xl"
-                    }`}
+                    className="flex flex-col items-center justify-center py-2 sm:py-3 cursor-pointer transition-all duration-300 relative group/day bg-transparent hover:bg-muted/10 rounded-2xl"
                   >
-                    {isSelected && (
-                      <motion.div 
-                        layoutId="active-day-marker"
-                        className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-t-full"
-                        transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                      />
-                    )}
-                    <span className={`text-[8px] sm:text-[10px] font-black tracking-widest uppercase mb-1 ${isSelected ? 'text-primary' : 'text-muted-foreground/60 group-hover/day:text-muted-foreground'}`}>
+                    <span 
+                      className={`text-[8px] sm:text-[10px] font-black tracking-widest uppercase mb-1 ${(isSelected || isDateTodayBool) ? '' : 'text-muted-foreground/60 group-hover/day:text-muted-foreground'}`}
+                      style={(isSelected || isDateTodayBool) ? { color: accentHex } : {}}
+                    >
                       {format(date, 'EEE').toUpperCase()}
                     </span>
-                    <span className={`text-base sm:text-xl font-bold ${isSelected ? 'text-foreground' : 'text-muted-foreground group-hover/day:text-foreground'}`}>
+                    <span 
+                      className={`text-base sm:text-xl font-bold ${(!isDateTodayBool && !isSelected) ? 'text-muted-foreground group-hover/day:text-foreground' : ''}`}
+                      style={(isDateTodayBool || isSelected) ? { color: isDateTodayBool ? accentHex : undefined } : {}}
+                    >
                       {format(date, 'd')}
                     </span>
+                    {isSelected && (
+                      <motion.div
+                        layoutId="selected-underline"
+                        className="absolute bottom-1 h-[2.5px] w-4 rounded-full"
+                        style={{ backgroundColor: accentHex }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                      />
+                    )}
                   </div>
                 )
               })}
             </div>
+            </LayoutGroup>
 
             <button 
               onClick={() => setWeekOffset(prev => prev + 1)}

@@ -13,6 +13,7 @@ import { GithubIcon } from '../components/ui/icons/GithubIcon';
 import { GoogleIcon } from '../components/ui/icons/GoogleIcon';
 import { useAuth0 } from '@auth0/auth0-react';
 import { syncSupabaseProfile } from '../lib/supabase';
+import { ACCENT_COLORS } from '../constants/colors';
 
 export default function Onboarding() {
   const { 
@@ -25,8 +26,14 @@ export default function Onboarding() {
   const { 
     setIsOnboarded, 
     setProfile,
-    setUser
+    setUser,
+    accentColor,
+    theme
   } = useStore();
+
+  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const effectiveTheme = theme === 'system' ? systemTheme : (theme || 'dark');
+  const accentHex = ACCENT_COLORS[accentColor]?.[effectiveTheme] || ACCENT_COLORS.Blue[effectiveTheme];
   
   // 0: Welcome | 1: Hostel | 2: Mess & Room | 3: Finalizing
   // 0: Welcome | 1: Hostel | 2: Mess & Room | 3: Finalizing
@@ -36,6 +43,7 @@ export default function Onboarding() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [socialLoading, setSocialLoading] = useState(null); // null | 'google' | 'github'
 
   // Local Profile State
   const [profileData, setProfileData] = useState({
@@ -86,9 +94,20 @@ export default function Onboarding() {
   };
 
   const handleSocialAuth = (connection) => {
+    const key = connection === 'google-oauth2' ? 'google' : 'github';
+    setSocialLoading(key);
+    loginWithRedirect({
+      authorizationParams: { connection }
+    });
+  };
+
+  const handleEmailAuth = () => {
+    if (!email) return;
+    setIsSubmitting(true);
     loginWithRedirect({
       authorizationParams: {
-        connection
+        connection: 'Username-Password-Authentication',
+        login_hint: email,
       }
     });
   };
@@ -123,6 +142,21 @@ export default function Onboarding() {
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px]" />
       </div>
 
+      {/* OAuth Progress Bar */}
+      <AnimatePresence>
+        {socialLoading && (
+          <motion.div
+            key="oauth-bar"
+            className="fixed top-0 left-0 h-[3px] z-50 rounded-r-full"
+            style={{ backgroundColor: effectiveTheme === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.7)' }}
+            initial={{ width: '0%' }}
+            animate={{ width: '85%' }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 2.5, ease: [0.25, 0.1, 0.25, 1] }}
+          />
+        )}
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         
         {/* STEP 0: WELCOME & AUTH */}
@@ -143,17 +177,14 @@ export default function Onboarding() {
                   exit={{ opacity: 0, scale: 1.1 }}
                   className="flex flex-col items-center py-12"
                 >
-                  {/* Premium Brand Icon Container */}
+                  {/* Logo — no box, just the icon */}
                   <div className="relative mb-12 sm:mb-16">
                     <div className="absolute -inset-8 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-                    <div className="relative w-28 h-28 sm:w-32 sm:h-32 bg-secondary/30 rounded-[2rem] border border-border/50 flex items-center justify-center overflow-hidden shadow-2xl">
-                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent" />
-                      <img 
-                        src="/icon.png" 
-                        alt="Messit Logo" 
-                        className="w-16 h-16 sm:w-20 sm:h-20 object-contain drop-shadow-xl" 
-                      />
-                    </div>
+                    <img 
+                      src="/icon.png" 
+                      alt="Messit Logo" 
+                      className="relative w-28 h-28 sm:w-32 sm:h-32 object-contain drop-shadow-2xl" 
+                    />
                   </div>
 
                   <div className="text-center mb-16 space-y-4 px-4">
@@ -223,18 +254,20 @@ export default function Onboarding() {
                     <div className="grid grid-cols-2 gap-4">
                       <button 
                         onClick={() => handleSocialAuth('google-oauth2')}
-                        onMouseEnter={() => googleIconRef.current?.startAnimation()}
+                        onMouseEnter={() => !socialLoading && googleIconRef.current?.startAnimation()}
                         onMouseLeave={() => googleIconRef.current?.stopAnimation()}
-                        className="flex items-center justify-center gap-3 bg-secondary/30 hover:bg-secondary/50 border border-border/50 py-4 rounded-xl transition-all active:scale-95 group"
+                        disabled={!!socialLoading}
+                        className="flex items-center justify-center gap-3 bg-secondary/30 hover:bg-secondary/50 border border-border/50 py-4 rounded-xl transition-all active:scale-95 group disabled:opacity-50"
                       >
                         <GoogleIcon ref={googleIconRef} />
                         <span className="text-[10px] font-black tracking-[0.2em] text-foreground/80">GOOGLE</span>
                       </button>
                       <button 
                         onClick={() => handleSocialAuth('github')}
-                        onMouseEnter={() => githubIconRef.current?.startAnimation()}
+                        onMouseEnter={() => !socialLoading && githubIconRef.current?.startAnimation()}
                         onMouseLeave={() => githubIconRef.current?.stopAnimation()}
-                        className="flex items-center justify-center gap-3 bg-secondary/30 hover:bg-secondary/50 border border-border/50 py-4 rounded-xl transition-all active:scale-95 group"
+                        disabled={!!socialLoading}
+                        className="flex items-center justify-center gap-3 bg-secondary/30 hover:bg-secondary/50 border border-border/50 py-4 rounded-xl transition-all active:scale-95 group disabled:opacity-50"
                       >
                         <GithubIcon ref={githubIconRef} size={18} />
                         <span className="text-[10px] font-black tracking-[0.2em] text-foreground/80">GITHUB</span>
@@ -276,10 +309,11 @@ export default function Onboarding() {
 
                     <div className="pt-4 space-y-4 text-center">
                       <button 
-                        onClick={() => setStep(1)}
-                        className="w-full h-16 rounded-2xl bg-foreground text-background font-black text-xs tracking-[0.2em] shadow-xl hover:opacity-90 transition-all active:scale-95"
+                        onClick={handleEmailAuth}
+                        disabled={isSubmitting || !email}
+                        className="w-full h-16 rounded-2xl bg-foreground text-background font-black text-xs tracking-[0.2em] shadow-xl hover:opacity-90 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                       >
-                        CONTINUE
+                        {isSubmitting ? <RefreshCw size={16} className="animate-spin" /> : 'CONTINUE'}
                       </button>
                       <button 
                         onClick={handleSkipIntent}

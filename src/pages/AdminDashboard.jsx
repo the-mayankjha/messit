@@ -609,7 +609,7 @@ export default function AdminDashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Megaphone className="text-orange-500" size={22} />
+                      <Megaphone size={22} style={{ color: accentHex }} />
                       <span>{editingAnnouncement ? 'Edit Protocol' : 'Elite Broadcast'}</span>
                     </div>
                     {editingAnnouncement && (
@@ -640,13 +640,23 @@ export default function AdminDashboard() {
                       value={announcementBody}
                       onChange={(e) => setAnnouncementBody(e.target.value)}
                       placeholder="Write your broadcast message here..."
-                      className="w-full min-h-[120px] bg-muted/20 border border-border/40 rounded-2xl p-4 text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-none"
+                      className="w-full min-h-[120px] border border-border/40 rounded-2xl p-4 text-sm font-medium focus:outline-none transition-all resize-none text-foreground placeholder:text-muted-foreground/40 bg-background"
+                      style={{ 
+                        colorScheme: effectiveTheme,
+                        borderColor: undefined
+                      }}
+                      onFocus={e => e.target.style.borderColor = `${accentHex}60`}
+                      onBlur={e => e.target.style.borderColor = ''}
                     />
                   </div>
                   <Button 
                     onClick={handleBroadcast}
                     disabled={isBroadcasting || !announcementTitle || !announcementBody}
-                    className="w-full h-14 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-black tracking-widest shadow-xl shadow-orange-500/10"
+                    className="w-full h-14 rounded-2xl text-white font-black tracking-widest"
+                    style={{ 
+                      backgroundColor: accentHex,
+                      boxShadow: `0 8px 24px ${accentHex}25`
+                    }}
                   >
                     {isBroadcasting ? <RefreshCw className="animate-spin" /> : editingAnnouncement ? "UPDATE BROADCAST" : "BROADCAST TO ALL"}
                   </Button>
@@ -658,7 +668,10 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-4 px-1">
                   <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/50 whitespace-nowrap">Broadcast Archive</h3>
                   <div className="h-px flex-1 bg-border/20" />
-                  <span className="text-[10px] font-black text-orange-500/60 whitespace-nowrap">{allAnnouncements.length} BROADCASTS</span>
+                  <span 
+                    className="text-[10px] font-black whitespace-nowrap"
+                    style={{ color: `${accentHex}90` }}
+                  >{allAnnouncements.length} BROADCASTS</span>
                 </div>
 
                 {announcementsLoading ? (
@@ -690,7 +703,13 @@ export default function AdminDashboard() {
                               <div className="flex items-center gap-2 mb-1 flex-wrap">
                                 <h4 className="font-bold text-base truncate pr-2">{ann.title}</h4>
                                 {role === 'Admin' && (
-                                  <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${isOwn ? 'bg-primary/10 text-primary border-primary/20' : 'bg-orange-500/10 text-orange-500 border-orange-500/20'}`}>
+                                  <span 
+                                    className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border`}
+                                    style={isOwn
+                                      ? { backgroundColor: `${accentHex}15`, color: accentHex, borderColor: `${accentHex}30` }
+                                      : { backgroundColor: 'rgba(128,128,128,0.1)', color: 'rgba(128,128,128,0.7)', borderColor: 'rgba(128,128,128,0.2)' }
+                                    }
+                                  >
                                     BY: {ann.created_by?.split('@')[0]}
                                   </span>
                                 )}
