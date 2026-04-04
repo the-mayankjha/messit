@@ -128,6 +128,9 @@ export default function Dashboard() {
     const cardRef = useRef(null);
     const [isCapturing, setIsCapturing] = useState(false);
     const captureRef = useRef(null); // Ref on the inner Card element (no padding bloat)
+    const ongoingHeaderBackground = effectiveTheme === 'dark'
+      ? `linear-gradient(180deg, ${accentHex}24 0%, ${accentHex}12 100%)`
+      : `linear-gradient(180deg, ${accentHex}18 0%, ${accentHex}0d 100%)`;
 
     const handleShare = async (e) => {
       e.stopPropagation();
@@ -220,7 +223,12 @@ export default function Dashboard() {
 
           <CardHeader 
             className={`pb-3 border-b transition-colors ${meal.status === 'Ongoing' ? 'border-primary/20' : 'border-border/50 group-hover:bg-muted/10'}`}
-            style={{ backgroundColor: meal.status === 'Ongoing' ? `${accentHex}15` : undefined }}
+            style={{
+              background: meal.status === 'Ongoing' ? ongoingHeaderBackground : undefined,
+              boxShadow: meal.status === 'Ongoing'
+                ? `inset 0 -1px 0 ${accentHex}20`
+                : undefined,
+            }}
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
