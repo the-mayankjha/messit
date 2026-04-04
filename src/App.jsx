@@ -276,6 +276,7 @@ export default function App() {
 
     const setupRealtime = async () => {
       const { supabase, getAnnouncements } = await import('./lib/supabase');
+      const state = useStore.getState();
       
       // 0. Sync Historical Announcements (Ensuring they are in the Manager)
       try {

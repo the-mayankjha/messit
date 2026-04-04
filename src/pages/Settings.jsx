@@ -8,7 +8,7 @@ import {
   Check, Crown, Dumbbell, Bell, 
   User, Mail, Building, Key, ShieldCheck,
   ShieldAlert, RefreshCw, Save, UserX, Lock,
-  Sparkles, Cloud, Megaphone, BellRing, LogIn
+  Sparkles, Cloud, Megaphone, BellRing, LogIn, Download
 } from 'lucide-react';
 import { GoogleIcon } from '../components/ui/icons/GoogleIcon';
 import { GithubIcon } from '../components/ui/icons/GithubIcon';
@@ -47,6 +47,8 @@ export default function Settings() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [coordinatorRequest, setCoordinatorRequest] = useState(null);
   const [isRequesting, setIsRequesting] = useState(false);
+  const [isUpdatingApp, setIsUpdatingApp] = useState(false);
+  const [updateMessage, setUpdateMessage] = useState('');
   const moonIconRef = useRef(null);
   const sunIconRef = useRef(null);
   const bellIconRef = useRef(null);
@@ -165,6 +167,57 @@ export default function Settings() {
       setLastTestResult(result);
     } else {
       alert("Please enable notifications in your browser settings.");
+    }
+  };
+
+  const handleUpdateApp = async () => {
+    if (isUpdatingApp) return;
+
+    if (!import.meta.env.PROD || window.location.hostname === 'localhost') {
+      setUpdateMessage('PWA updates are available only on the installed/production app, not on localhost.');
+      return;
+    }
+
+    setIsUpdatingApp(true);
+    setUpdateMessage('Checking for the latest build...');
+
+    try {
+      let reloaded = false;
+      const reloadToLatest = () => {
+        if (reloaded) return;
+        reloaded = true;
+        window.location.reload();
+      };
+
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((registration) => registration.update()));
+
+        navigator.serviceWorker.addEventListener('controllerchange', reloadToLatest, { once: true });
+
+        if (typeof window.__messitUpdateSW === 'function') {
+          setUpdateMessage('Downloading update and restarting app...');
+          await window.__messitUpdateSW(true);
+        } else {
+          const waitingRegistration = registrations.find((registration) => registration.waiting);
+          if (waitingRegistration?.waiting) {
+            setUpdateMessage('Applying downloaded update...');
+            waitingRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          } else {
+            setUpdateMessage('No pending update found. Reloading app...');
+          }
+        }
+
+        window.setTimeout(reloadToLatest, 1800);
+      } else {
+        setUpdateMessage('Reloading app...');
+        window.setTimeout(() => window.location.reload(), 500);
+      }
+    } catch (err) {
+      console.error('PWA update failed:', err);
+      setUpdateMessage('Unable to update automatically. Please reload the app.');
+      setIsUpdatingApp(false);
+      return;
     }
   };
 
@@ -719,6 +772,81 @@ export default function Settings() {
                     Fire Test Alert
                   </Button>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none bg-muted/5 shadow-xl shadow-muted/40">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="text-lg">App Update</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Download the newest PWA build and restart into it.</p>
+                </div>
+                <div
+                  className="w-10 h-10 rounded-2xl border flex items-center justify-center"
+                  style={{ backgroundColor: `${accentHex}10`, borderColor: `${accentHex}20`, color: accentHex }}
+                >
+                  <Download size={18} />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div
+                className="relative overflow-hidden rounded-[1.75rem] border px-4 py-4"
+                style={{ backgroundColor: `${accentHex}06`, borderColor: `${accentHex}18` }}
+              >
+                <div
+                  className="absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl"
+                  style={{ backgroundColor: `${accentHex}10` }}
+                />
+                <div className="relative flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60">Current Build</p>
+                    <div className="mt-2 flex items-end gap-2">
+                      <p className="text-2xl font-black tracking-tight">v{__APP_VERSION__}</p>
+                      <span
+                        className="mb-1 inline-flex items-center rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.22em]"
+                        style={{ backgroundColor: `${accentHex}12`, color: accentHex }}
+                      >
+                        {__BUILD_VARIANT__}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1.5">Build {__BUILD_DATE__}</p>
+                    <p className="text-[10px] text-muted-foreground/70 mt-1">
+                      {__BUILD_VARIANT__ === 'DEV' ? 'Development build' : 'Production build'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleUpdateApp}
+                disabled={isUpdatingApp || !import.meta.env.PROD || window.location.hostname === 'localhost'}
+                className="w-full rounded-[1.4rem] h-14 font-bold shadow-lg shadow-primary/10"
+                style={{
+                  background: `linear-gradient(180deg, ${accentHex}16 0%, ${accentHex}10 100%)`,
+                  color: accentHex,
+                  border: `1px solid ${accentHex}22`,
+                }}
+              >
+                {isUpdatingApp ? (
+                  <>
+                    <RefreshCw size={16} className="mr-2 animate-spin" />
+                    Updating App
+                  </>
+                ) : (
+                  <>
+                    <Download size={16} className="mr-2" />
+                    Get Latest Version
+                  </>
+                )}
+              </Button>
+
+              <div className="rounded-2xl bg-muted/20 px-4 py-3 border border-border/30">
+                <p className="text-[10px] leading-relaxed text-muted-foreground min-h-[28px]">
+                  {updateMessage || 'Use this when you want the installed app to pull the newest deployment and relaunch.'}
+                </p>
               </div>
             </CardContent>
           </Card>

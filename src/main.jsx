@@ -6,7 +6,12 @@ import { registerSW } from 'virtual:pwa-register';
 import { Auth0Provider } from '@auth0/auth0-react';
 
 // Register PWA Service Worker
-registerSW({ immediate: true });
+if (import.meta.env.PROD) {
+  const updateSW = registerSW({ immediate: true });
+  window.__messitUpdateSW = updateSW;
+} else {
+  window.__messitUpdateSW = null;
+}
 
 const domain = import.meta.env.VITE_AUTH0_DOMAIN;
 const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
