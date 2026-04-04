@@ -635,9 +635,9 @@ export default function Settings() {
               </Button>
               <div className="text-center space-y-1">
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
-                  App Version 1.2.0 (Stable)
+                  App Version {__APP_VERSION__} (STABLE)
                 </p>
-                <p className="text-[9px] text-muted-foreground/40 font-medium">Build: 2026.04.03.PRO</p>
+                <p className="text-[9px] text-muted-foreground/40 font-medium whitespace-nowrap">Build: {__BUILD_DATE__}.{__BUILD_VARIANT__}</p>
               </div>
           </div>
         </div>

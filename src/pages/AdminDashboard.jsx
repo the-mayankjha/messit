@@ -801,7 +801,7 @@ export default function AdminDashboard() {
       <div className="mt-16 pt-8 border-t border-border/10 text-center flex flex-col items-center gap-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-background border border-border/40 shadow-sm">
           <History size={12} className="text-muted-foreground/40" />
-          <span className="text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase">Elite Maintenance Protocol v1.4</span>
+          <span className="text-[9px] font-black tracking-widest text-muted-foreground/40 uppercase">Elite Maintenance Protocol v{__APP_VERSION__}</span>
         </div>
       </div>
     </div>

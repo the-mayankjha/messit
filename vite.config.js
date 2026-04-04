@@ -1,8 +1,14 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import pkg from './package.json';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __BUILD_DATE__: JSON.stringify(new Date().toISOString().split('T')[0].replace(/-/g, '.')),
+    __BUILD_VARIANT__: JSON.stringify(mode === 'production' ? 'PRO' : 'DEV'),
+  },
   plugins: [
     react(),
     VitePWA({
@@ -37,4 +43,4 @@ export default defineConfig({
       }
     })
   ],
-});
+}));
