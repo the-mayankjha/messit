@@ -7,7 +7,8 @@ import { Input } from '../components/ui/Input';
 import { 
   Check, Crown, Dumbbell, Bell, 
   User, Mail, Building, Key, ShieldCheck,
-  ShieldAlert, RefreshCw, Save, UserX, Lock
+  ShieldAlert, RefreshCw, Save, UserX, Lock,
+  Sparkles, Cloud, Megaphone, BellRing, LogIn
 } from 'lucide-react';
 import { GoogleIcon } from '../components/ui/icons/GoogleIcon';
 import { GithubIcon } from '../components/ui/icons/GithubIcon';
@@ -20,7 +21,7 @@ import { ACCENT_COLORS } from '../constants/colors';
 import { submitCoordinatorRequest, getUserCoordinatorRequest } from '../lib/supabase';
 
 export default function Settings() {
-  const { logout, user: auth0User, isAuthenticated } = useAuth0();
+  const { logout, loginWithRedirect, user: auth0User, isAuthenticated } = useAuth0();
   const { 
     user, 
     role, 
@@ -186,12 +187,63 @@ export default function Settings() {
         )}
       </div>
 
+      {/* Guest Login Prompt — shown only for unauthenticated users */}
+      {loginProvider === 'Guest' && (
+        <div className="mb-8 p-5 rounded-3xl border border-border/50 bg-card shadow-xl overflow-hidden relative">
+          <div className="absolute inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse at top left, ${accentHex}10 0%, transparent 60%)` }} />
+          <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            <div 
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border"
+              style={{ backgroundColor: `${accentHex}15`, borderColor: `${accentHex}30`, color: accentHex }}
+            >
+              <LogIn size={22} />
+            </div>
+            <div className="flex-grow min-w-0">
+              <p className="font-black text-sm text-foreground">Unlock the Full Messit Experience</p>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                Sign in to get cloud sync, automated menu updates, personalised notifications, and broadcast access.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {[
+                  { icon: Cloud, label: 'Cloud Sync' },
+                  { icon: BellRing, label: 'Smart Alerts' },
+                  { icon: Megaphone, label: 'Broadcasts' },
+                  { icon: Sparkles, label: 'Auto Menu' },
+                ].map(({ icon: Icon, label }) => (
+                  <span key={label} className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border border-border/50 bg-muted/30 text-muted-foreground">
+                    <Icon size={10} />
+                    {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2 shrink-0 w-full sm:w-auto">
+              <button
+                onClick={() => loginWithRedirect({ authorizationParams: { connection: 'google-oauth2' } })}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border/50 bg-muted/30 hover:bg-muted/60 transition-all text-[10px] font-black uppercase tracking-widest text-foreground"
+              >
+                <GoogleIcon size={14} />
+                Google
+              </button>
+              <button
+                onClick={() => loginWithRedirect({ authorizationParams: { connection: 'github' } })}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border/50 bg-muted/30 hover:bg-muted/60 transition-all text-[10px] font-black uppercase tracking-widest text-foreground"
+              >
+                <GithubIcon size={14} />
+                GitHub
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
         
         {/* Left Column: Account & Profile */}
         <div className="lg:col-span-2 space-y-6 sm:space-y-8">
           
-          {/* Campus Profile Section */}
+          {/* Campus Profile Section — hidden for Guest users */}
+          {loginProvider !== 'Guest' && (
           <Card className="overflow-hidden border-none shadow-2xl shadow-primary/5">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
@@ -376,6 +428,7 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+          )} {/* End Campus Profile guest gate */}
 
           {/* Identity & Security Card */}
           <Card className="border-none shadow-xl shadow-muted/50">

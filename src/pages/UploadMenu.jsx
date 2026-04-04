@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AlertCircle, Check, RefreshCw, Cloud, Database, Sparkles, ShieldCheck, ChevronRight } from 'lucide-react';
+import { AlertCircle, Check, RefreshCw, Cloud, Database, Sparkles, ShieldCheck, ChevronRight, FileCheck2, Replace } from 'lucide-react';
 import { CloudUploadIcon } from '../components/ui/icons/CloudUploadIcon';
 import { useStore } from '../store/useStore';
 import { ACCENT_COLORS } from '../constants/colors';
@@ -14,6 +14,7 @@ export default function UploadMenu({ onComplete }) {
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState(null);
   const [localParsedData, setLocalParsedData] = useState(null);
+  const [uploadedFileName, setUploadedFileName] = useState(null);
   
   const { 
     setMenuData, accentColor, theme, 
@@ -45,6 +46,7 @@ export default function UploadMenu({ onComplete }) {
     setLoading(true);
     setError(null);
     setLocalParsedData(null);
+    setUploadedFileName(file.name);
     
     try {
       const parsedData = await parseExcelMenu(file);
@@ -53,6 +55,7 @@ export default function UploadMenu({ onComplete }) {
       setMenuData(parsedData);
     } catch (err) {
       setError("Failed to parse the menu file.");
+      setUploadedFileName(null);
       console.error(err);
     } finally {
       setLoading(false);
@@ -143,7 +146,7 @@ export default function UploadMenu({ onComplete }) {
       </div>
 
       <AnimatePresence mode="wait">
-        {/* Status Dashboard for Regular Users */}
+        {/* Status Dashboard: Only for authenticated users with a cloud-synced profile */}
         {!isAuthorizedToCloud && user && (
           <motion.div 
             key="status_card"
@@ -192,25 +195,31 @@ export default function UploadMenu({ onComplete }) {
              animate={{ opacity: 1 }}
              className="relative group mb-8"
            >
+            {/* File input: always present so user can replace file */}
             <input 
               type="file" 
               id="file-upload" 
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 disabled:cursor-wait" 
+              className={`absolute inset-0 w-full h-full opacity-0 z-10 disabled:cursor-wait ${localParsedData ? 'pointer-events-none' : 'cursor-pointer'}`}
               accept=".xlsx"
               onChange={handleChange} 
-              disabled={loading || publishing}
+              disabled={loading || publishing || !!localParsedData}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDrop={handleDrop}
             />
             <div 
               className={`
-                border-2 border-dashed rounded-[2.5rem] p-12 text-center transition-all duration-500
+                border-2 rounded-[2.5rem] p-10 text-center transition-all duration-500
                 ${(loading || publishing) ? 'opacity-50 grayscale' : ''}
+                ${localParsedData ? 'border-solid' : 'border-dashed'}
               `}
               style={{
-                backgroundColor: dragActive ? `${accentHex}10` : 'rgba(var(--muted), 0.03)',
-                borderColor: dragActive ? accentHex : 'rgba(var(--border), 0.3)',
+                backgroundColor: localParsedData
+                  ? `${accentHex}08`
+                  : dragActive ? `${accentHex}10` : 'rgba(var(--muted), 0.03)',
+                borderColor: localParsedData
+                  ? `${accentHex}40`
+                  : dragActive ? accentHex : 'rgba(var(--border), 0.3)',
                 transform: dragActive ? 'scale(1.02)' : 'scale(1)'
               }}
             >
@@ -222,6 +231,44 @@ export default function UploadMenu({ onComplete }) {
                   </div>
                   <p className="text-xs font-black tracking-[0.3em] uppercase text-primary animate-pulse">Analyzing Buffet...</p>
                 </div>
+              ) : localParsedData ? (
+                // Success state
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex flex-col items-center gap-5 py-2"
+                >
+                  <div className="relative">
+                    <div className="absolute inset-0 blur-2xl rounded-full scale-110" style={{ backgroundColor: `${accentHex}30` }} />
+                    <div 
+                      className="relative w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl border"
+                      style={{ backgroundColor: `${accentHex}15`, borderColor: `${accentHex}30` }}
+                    >
+                      <FileCheck2 size={36} style={{ color: accentHex }} />
+                    </div>
+                    <div 
+                      className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-2 border-background flex items-center justify-center"
+                      style={{ backgroundColor: accentHex }}
+                    >
+                      <Check size={14} className="text-white" strokeWidth={3} />
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-sm font-black tracking-wide" style={{ color: accentHex }}>Menu Loaded Successfully</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1 font-mono">{uploadedFileName}</p>
+                    <p className="text-[10px] text-muted-foreground/40 mt-2 uppercase tracking-widest font-bold">
+                      {Object.keys(localParsedData).length} days parsed
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => { setLocalParsedData(null); setUploadedFileName(null); setError(null); }}
+                    className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-xl border transition-all hover:opacity-100 opacity-50"
+                    style={{ borderColor: `${accentHex}30`, color: accentHex }}
+                  >
+                    <Replace size={12} />
+                    Replace File
+                  </button>
+                </motion.div>
               ) : (
                 <div className="space-y-6">
                   <div className="relative inline-flex items-center justify-center p-6 bg-background rounded-3xl shadow-2xl border border-border/40 group-hover:scale-110 transition-transform duration-500">

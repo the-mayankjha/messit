@@ -6,7 +6,7 @@ import {
   ArrowRight, ArrowLeft, Crown, Check,
   RefreshCw, Building2, Utensils, Hash,
   Star, Sparkles, MapPin, User, ChevronRight,
-  ShieldCheck, Lock
+  ShieldCheck, Lock, Cloud, BellRing, Megaphone, X
 } from 'lucide-react';
 import { Input } from '../components/ui/Input';
 import { GithubIcon } from '../components/ui/icons/GithubIcon';
@@ -31,7 +31,7 @@ export default function Onboarding() {
   // 0: Welcome | 1: Hostel | 2: Mess & Room | 3: Finalizing
   // 0: Welcome | 1: Hostel | 2: Mess & Room | 3: Finalizing
   const [step, setStep] = useState(0);
-  const [authMode, setAuthMode] = useState('welcome'); // 'welcome' | 'auth'
+  const [authMode, setAuthMode] = useState('welcome'); // 'welcome' | 'auth' | 'guest-confirm'
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -102,6 +102,9 @@ export default function Onboarding() {
     setIsOnboarded(true);
   };
 
+  // Show the "what you'll miss" screen before truly skipping
+  const handleSkipIntent = () => setAuthMode('guest-confirm');
+
   if (isAuthLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 space-y-6 text-center">
@@ -132,7 +135,7 @@ export default function Onboarding() {
             className="max-w-md w-full relative z-10"
           >
             <AnimatePresence mode="wait">
-              {authMode === 'welcome' ? (
+              {authMode === 'welcome' && (
                 <motion.div
                   key="welcome_view"
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -179,7 +182,7 @@ export default function Onboarding() {
                         Log In
                       </button>
                       <button 
-                        onClick={handleGuestSkip}
+                        onClick={handleSkipIntent}
                         className="h-14 rounded-2xl bg-secondary/30 border border-border/40 hover:bg-secondary/50 text-foreground font-bold text-xs tracking-wider transition-all"
                       >
                         Skip for Now
@@ -194,7 +197,9 @@ export default function Onboarding() {
                     </p>
                   </div>
                 </motion.div>
-              ) : (
+              )}
+
+              {authMode === 'auth' && (
                 <motion.div
                   key="auth_view"
                   initial={{ opacity: 0, scale: 1.1 }}
@@ -277,7 +282,7 @@ export default function Onboarding() {
                         CONTINUE
                       </button>
                       <button 
-                        onClick={handleGuestSkip}
+                        onClick={handleSkipIntent}
                         className="text-muted-foreground/40 hover:text-foreground text-[9px] font-black uppercase tracking-[0.3em] transition-colors py-2"
                       >
                         Skip for now
@@ -286,7 +291,64 @@ export default function Onboarding() {
                   </div>
                 </motion.div>
               )}
+
+              {/* GUEST CONFIRM: What you'll miss — inside AnimatePresence so it replaces the form */}
+              {authMode === 'guest-confirm' && (
+                <motion.div
+                  key="guest_confirm"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -16 }}
+                  className="py-10 px-2"
+                >
+                  <div className="text-center mb-8">
+                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-muted/50 border border-border/50 mb-5">
+                      <X size={24} className="text-muted-foreground" />
+                    </div>
+                    <h2 className="text-2xl font-black tracking-tight text-foreground mb-2">You'll miss out on…</h2>
+                    <p className="text-sm text-muted-foreground/60 max-w-[280px] mx-auto">Guest mode is limited. Here's what you won't get:</p>
+                  </div>
+
+                  <div className="space-y-3 mb-8">
+                    {[
+                      { icon: Cloud, title: 'Cloud Sync & Auto Menu', desc: 'Your menu updates automatically every week — no uploads needed.' },
+                      { icon: Megaphone, title: 'Broadcasts & Announcements', desc: 'Real-time notices from coordinators and campus admins.' },
+                      { icon: BellRing, title: 'Personalised Notifications', desc: 'Smart alerts for your mess timings and meal preferences.' },
+                      { icon: Building2, title: 'Campus Profile', desc: 'Hostel and mess preferences synced to your account.' },
+                      { icon: ShieldCheck, title: 'Platform Role & Authority', desc: 'Apply for Coordinator or Admin access.' },
+                    ].map(({ icon: Icon, title, desc }) => (
+                      <div key={title} className="flex items-start gap-3 p-3.5 rounded-2xl bg-card border border-border/40">
+                        <div className="w-8 h-8 rounded-xl bg-muted/50 flex items-center justify-center shrink-0">
+                          <Icon size={16} className="text-muted-foreground/60" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-black text-foreground">{title}</p>
+                          <p className="text-[10px] text-muted-foreground/50 mt-0.5 leading-relaxed">{desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Go back to welcome to use existing login/signup buttons */}
+                    <button
+                      onClick={() => setAuthMode('welcome')}
+                      className="w-full h-14 rounded-2xl bg-foreground text-background font-black text-xs tracking-[0.2em] hover:opacity-90 transition-all active:scale-95"
+                    >
+                      CREATE ACCOUNT / LOG IN
+                    </button>
+                    <button
+                      onClick={handleGuestSkip}
+                      className="w-full h-12 rounded-2xl border border-border/40 bg-transparent text-muted-foreground/50 hover:text-foreground hover:border-border transition-all text-[10px] font-black uppercase tracking-[0.2em]"
+                    >
+                      Continue as Guest
+                    </button>
+                  </div>
+                </motion.div>
+              )}
             </AnimatePresence>
+.div>
+            )}
           </motion.div>
         )}
 
@@ -306,7 +368,7 @@ export default function Onboarding() {
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/80">Campus Setup</span>
               </div>
-              <h1 className="text-4xl font-bold tracking-tight mb-3 text-white">Where do you stay?</h1>
+              <h1 className="text-4xl font-bold tracking-tight mb-3 text-foreground">Where do you stay?</h1>
               <p className="text-muted-foreground text-base mb-10">Pick your hostel to tailor your dining schedule.</p>
 
               <div className="flex bg-secondary/50 p-1 rounded-2xl border border-border/50 mb-10 w-full max-w-[340px] mx-auto">
@@ -396,7 +458,7 @@ export default function Onboarding() {
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/80">Preferences</span>
               </div>
-              <h1 className="text-4xl font-bold tracking-tight mb-3 text-white">Fine-tune your diet.</h1>
+              <h1 className="text-4xl font-bold tracking-tight mb-3 text-foreground">Fine-tune your diet.</h1>
               <p className="text-muted-foreground text-sm">Set your specific mess type and room details.</p>
             </div>
 

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '../store/useStore';
+import { useAuth0 } from '@auth0/auth0-react';
 import { ACCENT_COLORS } from '../constants/colors';
 import { SendIcon } from '../components/ui/icons/SendIcon';
 import { toPng } from 'html-to-image';
@@ -28,16 +29,19 @@ import { Megaphone, X, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-rea
 import { getAnnouncements } from '../lib/supabase';
 
 export default function Dashboard() {
-  const { 
-    menuData, setMenuData, accentColor, theme, user,
+  const { menuData, setMenuData, accentColor, theme, user,
     cloudMenuInfo, syncStatus, isSyncing,
     dismissedAnnouncementIds, dismissAnnouncement
   } = useStore();
+  const { isAuthenticated } = useAuth0();
+  const isGuest = !isAuthenticated;
   const [view, setView] = useState('day'); // 'day' | 'week' | 'month'
   const [announcements, setAnnouncements] = useState([]);
   const [isBroadcastExpanded, setIsBroadcastExpanded] = useState(false);
   
   const fetchAnnouncements = () => {
+    // Guests don't have access to broadcast messages
+    if (isGuest) return;
     getAnnouncements().then(res => {
       if (res.success) setAnnouncements(res.data);
     });
@@ -45,11 +49,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchAnnouncements();
-
-    // Listen for real-time announcement events from App.jsx
+    if (isGuest) return; // Skip real-time listener for guests
     window.addEventListener('new-announcement', fetchAnnouncements);
     return () => window.removeEventListener('new-announcement', fetchAnnouncements);
-  }, []);
+  }, [isGuest]);
   
   const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   const effectiveTheme = theme === 'system' ? systemTheme : theme;
@@ -324,52 +327,54 @@ export default function Dashboard() {
           <p className="text-muted-foreground">{format(selectedDate, 'EEEE, MMMM do, yyyy')}</p>
         </div>
 
-        {/* Global Announcements Section */}
-        <AnimatePresence>
-          {(() => {
-            const latest = announcements[0];
-            if (!latest) return null;
-            if (dismissedAnnouncementIds.includes(latest.id)) return null;
-            return (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="w-full lg:w-3/5 border rounded-3xl p-4 overflow-hidden relative group shadow-2xl transition-colors duration-500 cursor-pointer"
-                onClick={() => setIsBroadcastExpanded(!isBroadcastExpanded)}
-                style={{ 
-                  backgroundColor: `${accentHex}10`, 
-                  borderColor: `${accentHex}30` 
-                }}
-              >
-                <button 
-                  onClick={(e) => { e.stopPropagation(); dismissAnnouncement(latest.id); }}
-                  className="absolute top-2 right-2 p-1.5 rounded-full transition-all z-20"
-                  style={{ color: `${accentHex}80` }}
-                  onMouseEnter={(e) => e.target.style.color = accentHex}
-                  onMouseLeave={(e) => e.target.style.color = `${accentHex}80`}
+        {/* Global Announcements Section — hidden for Guest users */}
+        {!isGuest && (
+          <AnimatePresence>
+            {(() => {
+              const latest = announcements[0];
+              if (!latest) return null;
+              if (dismissedAnnouncementIds.includes(latest.id)) return null;
+              return (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="w-full lg:w-3/5 border rounded-3xl p-4 overflow-hidden relative group shadow-2xl transition-colors duration-500 cursor-pointer"
+                  onClick={() => setIsBroadcastExpanded(!isBroadcastExpanded)}
+                  style={{ 
+                    backgroundColor: `${accentHex}10`, 
+                    borderColor: `${accentHex}30` 
+                  }}
                 >
-                  <X size={14} />
-                </button>
-                <div className="flex items-start gap-4">
-                  <div 
-                    className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg border"
-                    style={{ backgroundColor: `${accentHex}20`, color: accentHex, borderColor: `${accentHex}30` }}
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); dismissAnnouncement(latest.id); }}
+                    className="absolute top-2 right-2 p-1.5 rounded-full transition-all z-20"
+                    style={{ color: `${accentHex}80` }}
+                    onMouseEnter={(e) => e.target.style.color = accentHex}
+                    onMouseLeave={(e) => e.target.style.color = `${accentHex}80`}
                   >
-                    <Megaphone size={20} className="animate-bounce" />
+                    <X size={14} />
+                  </button>
+                  <div className="flex items-start gap-4">
+                    <div 
+                      className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-lg border"
+                      style={{ backgroundColor: `${accentHex}20`, color: accentHex, borderColor: `${accentHex}30` }}
+                    >
+                      <Megaphone size={20} className="animate-bounce" />
+                    </div>
+                    <div className="min-w-0 pr-8">
+                       <h4 className="text-[10px] font-black uppercase tracking-[0.25em] mb-1.5" style={{ color: accentHex }}>Latest Broadcast</h4>
+                       <div className="animate-in fade-in slide-in-from-right-2 duration-500">
+                         <p className={`text-sm font-bold text-foreground mb-0.5 ${isBroadcastExpanded ? '' : 'truncate'}`}>{latest.title}</p>
+                         <p className={`text-xs text-muted-foreground whitespace-pre-wrap ${isBroadcastExpanded ? '' : 'line-clamp-1'}`}>{latest.content}</p>
+                       </div>
+                    </div>
                   </div>
-                  <div className="min-w-0 pr-8">
-                     <h4 className="text-[10px] font-black uppercase tracking-[0.25em] mb-1.5" style={{ color: accentHex }}>Latest Broadcast</h4>
-                     <div className="animate-in fade-in slide-in-from-right-2 duration-500">
-                       <p className={`text-sm font-bold text-foreground mb-0.5 ${isBroadcastExpanded ? '' : 'truncate'}`}>{latest.title}</p>
-                       <p className={`text-xs text-muted-foreground whitespace-pre-wrap ${isBroadcastExpanded ? '' : 'line-clamp-1'}`}>{latest.content}</p>
-                     </div>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })()}
-        </AnimatePresence>
+                </motion.div>
+              );
+            })()}
+          </AnimatePresence>
+        )}
         
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
