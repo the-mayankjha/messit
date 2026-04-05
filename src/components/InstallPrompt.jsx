@@ -36,16 +36,21 @@ export default function InstallPrompt() {
       window.setTimeout(() => setIsOpen(true), 900);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    const handleInstalled = () => {
+      setDeferredPrompt(null);
+      setIsInstalling(false);
+      setIsOpen(false);
+    };
 
-    let timer = null;
-    if (installContext.ios) {
-      timer = window.setTimeout(() => setIsOpen(true), 1200);
-    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleInstalled);
+
+    const timer = window.setTimeout(() => setIsOpen(true), installContext.ios ? 1200 : 1400);
 
     return () => {
-      if (timer) window.clearTimeout(timer);
+      window.clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleInstalled);
     };
   }, [installContext]);
 
@@ -129,7 +134,21 @@ export default function InstallPrompt() {
                     </p>
                   </div>
                 ) : (
-                  <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
+                  <div className="mt-4 space-y-3">
+                    {!deferredPrompt && (
+                      <div className="rounded-[1.2rem] border border-border/30 bg-muted/15 p-3.5">
+                        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground/60">
+                          Browser Install
+                        </p>
+                        <p className="mt-2 text-sm leading-relaxed text-foreground/85">
+                          If your browser supports installation, use the browser menu and choose
+                          <span className="font-semibold"> Install App</span> or
+                          <span className="font-semibold"> Add to Home Screen</span>.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col gap-2.5 sm:flex-row">
                     <button
                       onClick={handleInstall}
                       disabled={!deferredPrompt || isInstalling}
@@ -141,7 +160,7 @@ export default function InstallPrompt() {
                       }}
                     >
                       <DownloadIcon size={18} />
-                      {isInstalling ? 'Installing...' : 'Install Now'}
+                      {isInstalling ? 'Installing...' : deferredPrompt ? 'Install Now' : 'Open Browser Install'}
                     </button>
                     <button
                       onClick={closePrompt}
@@ -149,6 +168,7 @@ export default function InstallPrompt() {
                     >
                       Maybe Later
                     </button>
+                    </div>
                   </div>
                 )}
               </div>
