@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { HousePlus, Plus, Share2, X } from 'lucide-react';
+import { Plus, Share2, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { ACCENT_COLORS } from '../constants/colors';
 import { DownloadIcon } from './ui/icons/DownloadIcon';
 import { EllipsisVerticalIcon } from './ui/icons/EllipsisVerticalIcon';
+import { HousePlusIcon } from './ui/icons/HousePlusIcon';
 
 export default function InstallPrompt() {
   const { accentColor, theme } = useStore();
@@ -15,6 +16,7 @@ export default function InstallPrompt() {
   const [activeBrowserStep, setActiveBrowserStep] = useState(0);
   const buttonIconRef = useRef(null);
   const menuIconRef = useRef(null);
+  const housePlusIconRef = useRef(null);
 
   const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   const effectiveTheme = theme === 'system' ? systemTheme : theme;
@@ -89,6 +91,16 @@ export default function InstallPrompt() {
       menuIconRef.current.startAnimation?.();
     } else {
       menuIconRef.current.stopAnimation?.();
+    }
+  }, [showBrowserSteps, activeBrowserStep]);
+
+  useEffect(() => {
+    if (!housePlusIconRef.current) return;
+
+    if (showBrowserSteps && activeBrowserStep === 1) {
+      housePlusIconRef.current.startAnimation?.();
+    } else {
+      housePlusIconRef.current.stopAnimation?.();
     }
   }, [showBrowserSteps, activeBrowserStep]);
 
@@ -245,21 +257,12 @@ export default function InstallPrompt() {
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
-                                <motion.div
-                                  animate={
-                                    activeBrowserStep === 1
-                                      ? {
-                                          scale: [1, 1.08, 1],
-                                          y: [0, -1.5, 0],
-                                        }
-                                      : { scale: 1, y: 0 }
-                                  }
-                                  transition={{ duration: 0.6, repeat: activeBrowserStep === 1 ? Infinity : 0, ease: 'easeInOut' }}
+                                <HousePlusIcon
+                                  ref={housePlusIconRef}
+                                  size={15}
                                   className="shrink-0"
                                   style={{ color: accentHex }}
-                                >
-                                  <HousePlus size={15} />
-                                </motion.div>
+                                />
                                 <p className="text-sm font-semibold text-foreground">Install from the menu</p>
                               </div>
                               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
