@@ -16,6 +16,7 @@ import { SearchIcon } from './components/ui/icons/SearchIcon';
 import { useAuth0 } from '@auth0/auth0-react';
 import { requestNotificationPermission, sendNotification } from './utils/notifier';
 import NotificationDrawer from './components/NotificationDrawer';
+import InstallPrompt from './components/InstallPrompt';
 import { CoffeeIcon } from './components/ui/icons/CoffeeIcon';
 import { LunchIcon } from './components/ui/icons/LunchIcon';
 import { SnacksIcon } from './components/ui/icons/SnacksIcon';
@@ -662,6 +663,9 @@ export default function App() {
 
       {/* Connection Recovery Indicator */}
       <OfflineIndicator />
+
+      {/* Browser install prompt */}
+      <InstallPrompt />
 
       {/* Offline banner — shown instantly when device has no network */}
       {isOfflineMode && (
