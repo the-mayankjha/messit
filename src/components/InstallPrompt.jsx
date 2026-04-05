@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Plus, Share2, Smartphone, X } from 'lucide-react';
+import { EllipsisVertical, HousePlus, Plus, Share2, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { ACCENT_COLORS } from '../constants/colors';
 import { DownloadIcon } from './ui/icons/DownloadIcon';
@@ -13,6 +13,7 @@ export default function InstallPrompt() {
   const [isOpen, setIsOpen] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
   const [showBrowserSteps, setShowBrowserSteps] = useState(false);
+  const [activeBrowserStep, setActiveBrowserStep] = useState(0);
 
   const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   const effectiveTheme = theme === 'system' ? systemTheme : theme;
@@ -30,6 +31,22 @@ export default function InstallPrompt() {
 
     return { supported: true, ios, standalone, android, chromeLike };
   }, []);
+
+  const browserHintPosition = useMemo(() => {
+    if (!installContext.android || !installContext.chromeLike) {
+      return {
+        top: '5.1rem',
+        right: '1rem',
+        arrowOffset: '0px',
+      };
+    }
+
+    return {
+      top: 'calc(env(safe-area-inset-top, 0px) + 3.4rem)',
+      right: '0.45rem',
+      arrowOffset: '8px',
+    };
+  }, [installContext.android, installContext.chromeLike]);
 
   useEffect(() => {
     if (!installContext.supported || installContext.standalone) return;
@@ -60,6 +77,16 @@ export default function InstallPrompt() {
     };
   }, [installContext]);
 
+  useEffect(() => {
+    if (!showBrowserSteps) return;
+
+    const interval = window.setInterval(() => {
+      setActiveBrowserStep((current) => (current + 1) % 2);
+    }, 2400);
+
+    return () => window.clearInterval(interval);
+  }, [showBrowserSteps]);
+
   const closePrompt = () => {
     localStorage.setItem(DISMISS_KEY, 'true');
     setIsOpen(false);
@@ -68,6 +95,7 @@ export default function InstallPrompt() {
   const handleInstall = async () => {
     if (!deferredPrompt) {
       setShowBrowserSteps(true);
+      setActiveBrowserStep(0);
       return;
     }
 
@@ -111,9 +139,9 @@ export default function InstallPrompt() {
                   <div className="flex min-w-0 items-start gap-3.5">
                     <div
                       className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-                      style={{ backgroundColor: `${accentHex}12`, color: accentHex }}
+                      style={{ backgroundColor: `${accentHex}12` }}
                     >
-                      <Smartphone size={20} />
+                      <img src="/icon.png" alt="Messit" className="h-7 w-7 rounded-lg object-cover" />
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-base font-black tracking-tight sm:text-lg">Install Messit</h3>
@@ -158,25 +186,126 @@ export default function InstallPrompt() {
                     )}
 
                     {showBrowserSteps && !deferredPrompt && (
-                      <div
-                        className="rounded-[1.2rem] border p-3.5"
-                        style={{
-                          borderColor: `${accentHex}24`,
-                          backgroundColor: `${accentHex}10`,
-                        }}
-                      >
-                        <p
-                          className="text-[11px] font-black uppercase tracking-[0.18em]"
-                          style={{ color: accentHex }}
+                      <>
+                        {installContext.android && installContext.chromeLike && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -12 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="pointer-events-none fixed z-[95] flex flex-col items-end gap-2"
+                            style={{
+                              top: browserHintPosition.top,
+                              right: browserHintPosition.right,
+                            }}
+                          >
+                            <motion.div
+                              animate={{
+                                y: activeBrowserStep === 0 ? [0, -9, 0] : [0, -3, 0],
+                                x: activeBrowserStep === 0 ? [0, 5, 0] : [0, 1, 0],
+                                opacity: [0.75, 1, 0.75],
+                                scale: activeBrowserStep === 0 ? [1, 1.08, 1] : [1, 1.03, 1],
+                              }}
+                              transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+                              className="text-3xl"
+                              style={{ color: accentHex, marginRight: browserHintPosition.arrowOffset }}
+                            >
+                              ↗
+                            </motion.div>
+                            <motion.div
+                              key={activeBrowserStep}
+                              initial={{ opacity: 0, y: -6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="max-w-[11.5rem] rounded-2xl border px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] shadow-xl"
+                              style={{
+                                color: accentHex,
+                                borderColor: `${accentHex}2c`,
+                                backgroundColor: effectiveTheme === 'dark' ? 'rgba(12, 12, 12, 0.92)' : 'rgba(255, 255, 255, 0.92)',
+                              }}
+                            >
+                              {activeBrowserStep === 0 ? 'Tap the three dots' : 'Choose Add to Home Screen'}
+                            </motion.div>
+                          </motion.div>
+                        )}
+
+                        <div
+                          className="rounded-[1.2rem] border p-3.5"
+                          style={{
+                            borderColor: `${accentHex}24`,
+                            backgroundColor: `${accentHex}10`,
+                          }}
                         >
-                          Quick Steps
-                        </p>
-                        <p className="mt-2 text-sm leading-relaxed text-foreground/90">
-                          {installContext.android && installContext.chromeLike
-                            ? 'Tap the three-dot menu in the top-right of your browser, then choose Install app or Add to Home screen.'
-                            : 'Open your browser menu and choose Install app or Add to Home Screen to place Messit on your phone.'}
-                        </p>
-                      </div>
+                          <div className="flex items-center gap-2">
+                            <p
+                              className="text-[11px] font-black uppercase tracking-[0.18em]"
+                              style={{ color: accentHex }}
+                            >
+                              Quick Steps
+                            </p>
+                            <div className="flex gap-1.5">
+                              {[0, 1].map((step) => (
+                                <span
+                                  key={step}
+                                  className="h-1.5 w-1.5 rounded-full transition-all"
+                                  style={{
+                                    backgroundColor: step === activeBrowserStep ? accentHex : `${accentHex}30`,
+                                    transform: step === activeBrowserStep ? 'scale(1.15)' : 'scale(1)',
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="mt-3 grid gap-2.5">
+                            <motion.div
+                              animate={{
+                                borderColor: activeBrowserStep === 0 ? `${accentHex}52` : 'rgba(0,0,0,0)',
+                                backgroundColor: activeBrowserStep === 0 ? `${accentHex}14` : 'transparent',
+                              }}
+                              className="flex items-start gap-3 rounded-2xl border px-3 py-3"
+                            >
+                              <div
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black"
+                                style={{ backgroundColor: `${accentHex}18`, color: accentHex }}
+                              >
+                                1
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <EllipsisVertical size={15} style={{ color: accentHex }} />
+                                  <p className="text-sm font-semibold text-foreground">Open the browser menu</p>
+                                </div>
+                                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                                  Tap the three-dot menu in the top-right corner of your browser.
+                                </p>
+                              </div>
+                            </motion.div>
+
+                            <motion.div
+                              animate={{
+                                borderColor: activeBrowserStep === 1 ? `${accentHex}52` : 'rgba(0,0,0,0)',
+                                backgroundColor: activeBrowserStep === 1 ? `${accentHex}14` : 'transparent',
+                              }}
+                              className="flex items-start gap-3 rounded-2xl border px-3 py-3"
+                            >
+                              <div
+                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black"
+                                style={{ backgroundColor: `${accentHex}18`, color: accentHex }}
+                              >
+                                2
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <HousePlus size={15} style={{ color: accentHex }} />
+                                  <p className="text-sm font-semibold text-foreground">Install from the menu</p>
+                                </div>
+                                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                                  Choose <span className="font-semibold text-foreground">Add to Home Screen</span> or
+                                  <span className="font-semibold text-foreground"> Install app</span>.
+                                </p>
+                              </div>
+                            </motion.div>
+                          </div>
+                        </div>
+                      </>
                     )}
 
                     <div className="flex flex-col gap-2.5 sm:flex-row">
