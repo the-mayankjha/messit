@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { EllipsisVertical, HousePlus, Plus, Share2, X } from 'lucide-react';
+import { HousePlus, Plus, Share2, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { ACCENT_COLORS } from '../constants/colors';
 import { DownloadIcon } from './ui/icons/DownloadIcon';
-
-const DISMISS_KEY = 'messit-install-dismissed';
+import { EllipsisVerticalIcon } from './ui/icons/EllipsisVerticalIcon';
 
 export default function InstallPrompt() {
   const { accentColor, theme } = useStore();
@@ -15,6 +14,7 @@ export default function InstallPrompt() {
   const [showBrowserSteps, setShowBrowserSteps] = useState(false);
   const [activeBrowserStep, setActiveBrowserStep] = useState(0);
   const buttonIconRef = useRef(null);
+  const menuIconRef = useRef(null);
 
   const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   const effectiveTheme = theme === 'system' ? systemTheme : theme;
@@ -35,7 +35,6 @@ export default function InstallPrompt() {
 
   useEffect(() => {
     if (!installContext.supported || installContext.standalone) return;
-    if (localStorage.getItem(DISMISS_KEY) === 'true') return;
 
     const handleBeforeInstallPrompt = (event) => {
       event.preventDefault();
@@ -83,8 +82,17 @@ export default function InstallPrompt() {
     buttonIconRef.current.stopAnimation?.();
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!menuIconRef.current) return;
+
+    if (showBrowserSteps && activeBrowserStep === 0) {
+      menuIconRef.current.startAnimation?.();
+    } else {
+      menuIconRef.current.stopAnimation?.();
+    }
+  }, [showBrowserSteps, activeBrowserStep]);
+
   const closePrompt = () => {
-    localStorage.setItem(DISMISS_KEY, 'true');
     setIsOpen(false);
   };
 
@@ -208,7 +216,12 @@ export default function InstallPrompt() {
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
-                                <EllipsisVertical size={15} style={{ color: accentHex }} />
+                                <EllipsisVerticalIcon
+                                  ref={menuIconRef}
+                                  size={15}
+                                  className="shrink-0"
+                                  style={{ color: accentHex }}
+                                />
                                 <p className="text-sm font-semibold text-foreground">Open the browser menu</p>
                               </div>
                               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
@@ -232,7 +245,21 @@ export default function InstallPrompt() {
                             </div>
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
-                                <HousePlus size={15} style={{ color: accentHex }} />
+                                <motion.div
+                                  animate={
+                                    activeBrowserStep === 1
+                                      ? {
+                                          scale: [1, 1.08, 1],
+                                          y: [0, -1.5, 0],
+                                        }
+                                      : { scale: 1, y: 0 }
+                                  }
+                                  transition={{ duration: 0.6, repeat: activeBrowserStep === 1 ? Infinity : 0, ease: 'easeInOut' }}
+                                  className="shrink-0"
+                                  style={{ color: accentHex }}
+                                >
+                                  <HousePlus size={15} />
+                                </motion.div>
                                 <p className="text-sm font-semibold text-foreground">Install from the menu</p>
                               </div>
                               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
@@ -246,37 +273,39 @@ export default function InstallPrompt() {
                     )}
 
                     <div className="flex flex-col gap-2.5 sm:flex-row">
-                      <motion.button
-                        onClick={handleInstall}
-                        className="flex flex-1 items-center justify-center gap-3 rounded-[1.25rem] border px-4 py-3.5 font-bold transition-all disabled:opacity-50"
-                        style={{
-                          backgroundColor: `${accentHex}12`,
-                          color: accentHex,
-                          borderColor: `${accentHex}24`,
-                        }}
-                        disabled={isInstalling}
-                        whileHover={{ scale: 1.01, y: -1 }}
-                        whileTap={{ scale: 0.985 }}
-                        animate={
-                          !deferredPrompt && !showBrowserSteps
-                            ? {
-                                boxShadow: [
-                                  `0 0 0 0 ${accentHex}00`,
-                                  `0 10px 28px -16px ${accentHex}66`,
-                                  `0 0 0 0 ${accentHex}00`,
-                                ],
-                              }
-                            : undefined
-                        }
-                        transition={
-                          !deferredPrompt && !showBrowserSteps
-                            ? { duration: 1.8, repeat: Infinity, ease: 'easeInOut' }
-                            : undefined
-                        }
-                      >
-                        <DownloadIcon ref={buttonIconRef} size={20} className="-rotate-90" />
-                        {isInstalling ? 'Installing...' : deferredPrompt ? 'Install Now' : 'Show Install Steps'}
-                      </motion.button>
+                      {(!showBrowserSteps || deferredPrompt) && (
+                        <motion.button
+                          onClick={handleInstall}
+                          className="flex flex-1 items-center justify-center gap-3 rounded-[1.25rem] border px-4 py-3.5 font-bold transition-all disabled:opacity-50"
+                          style={{
+                            backgroundColor: `${accentHex}12`,
+                            color: accentHex,
+                            borderColor: `${accentHex}24`,
+                          }}
+                          disabled={isInstalling}
+                          whileHover={{ scale: 1.01, y: -1 }}
+                          whileTap={{ scale: 0.985 }}
+                          animate={
+                            !deferredPrompt && !showBrowserSteps
+                              ? {
+                                  boxShadow: [
+                                    `0 0 0 0 ${accentHex}00`,
+                                    `0 10px 28px -16px ${accentHex}66`,
+                                    `0 0 0 0 ${accentHex}00`,
+                                  ],
+                                }
+                              : undefined
+                          }
+                          transition={
+                            !deferredPrompt && !showBrowserSteps
+                              ? { duration: 1.8, repeat: Infinity, ease: 'easeInOut' }
+                              : undefined
+                          }
+                        >
+                          <DownloadIcon ref={buttonIconRef} size={20} className="-rotate-90" />
+                          {isInstalling ? 'Installing...' : deferredPrompt ? 'Install Now' : 'How To Install'}
+                        </motion.button>
+                      )}
                       <button
                         onClick={closePrompt}
                         className="rounded-[1.25rem] border border-border/35 px-4 py-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/20 hover:text-foreground"
