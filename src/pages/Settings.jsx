@@ -56,6 +56,7 @@ export default function Settings() {
   const bellIconRef = useRef(null);
   const downloadIconRef = useRef(null);
   const updateHeaderIconRef = useRef(null);
+  const updateBuildCardIconRef = useRef(null);
 
   const hostels = {
     male: ['MH1', 'MH2', 'MH3', 'MH4', 'MH5', 'MH6', 'MH7'],
@@ -134,9 +135,6 @@ export default function Settings() {
   useEffect(() => {
     const syncUpdateState = () => {
       setIsUpdateAvailable(Boolean(window.__messitUpdateAvailable));
-      if (window.__messitUpdateAvailable) {
-        updateHeaderIconRef.current?.startAnimation();
-      }
     };
 
     syncUpdateState();
@@ -144,6 +142,16 @@ export default function Settings() {
 
     return () => window.removeEventListener('messit-update-available', syncUpdateState);
   }, []);
+
+  useEffect(() => {
+    if (isUpdateAvailable) {
+      updateHeaderIconRef.current?.startAnimation();
+      updateBuildCardIconRef.current?.startAnimation();
+    } else {
+      updateHeaderIconRef.current?.stopAnimation();
+      updateBuildCardIconRef.current?.stopAnimation();
+    }
+  }, [isUpdateAvailable]);
 
   const handleRequestCoordinator = async () => {
     if (!user?.email || !user?.name || !hostel) return;
@@ -202,6 +210,7 @@ export default function Settings() {
     setUpdateMessage('Checking for the latest build...');
     downloadIconRef.current?.startAnimation();
     updateHeaderIconRef.current?.stopAnimation();
+    updateBuildCardIconRef.current?.stopAnimation();
 
     try {
       let reloaded = false;
@@ -814,15 +823,24 @@ export default function Settings() {
                   }}
                 >
                   <div className="relative">
-                    <DownloadIcon ref={updateHeaderIconRef} size={18} />
+                      <DownloadIcon ref={updateHeaderIconRef} size={18} />
                     {isUpdateAvailable && (
-                      <span
-                        className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full"
-                        style={{
-                          backgroundColor: accentHex,
-                          boxShadow: `0 0 0 3px ${effectiveTheme === 'dark' ? '#1f1f1f' : '#ffffff'}`
-                        }}
-                      />
+                      <>
+                        <span
+                          className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full animate-ping"
+                          style={{
+                            backgroundColor: accentHex,
+                            opacity: 0.45,
+                          }}
+                        />
+                        <span
+                          className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full"
+                          style={{
+                            backgroundColor: accentHex,
+                            boxShadow: `0 0 0 3px ${effectiveTheme === 'dark' ? '#1f1f1f' : '#ffffff'}`
+                          }}
+                        />
+                      </>
                     )}
                   </div>
                 </div>
@@ -830,33 +848,57 @@ export default function Settings() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div
-                className="relative overflow-hidden rounded-[1.75rem] border px-4 py-4"
+                className="relative overflow-hidden rounded-[1.75rem] border px-5 py-5"
                 style={{ backgroundColor: `${accentHex}06`, borderColor: `${accentHex}18` }}
               >
                 <div
                   className="absolute top-0 right-0 w-24 h-24 rounded-full blur-3xl"
                   style={{ backgroundColor: `${accentHex}10` }}
                 />
-                <div className="relative flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted-foreground/60">Current Build</p>
-                    <div className="mt-2 flex items-end gap-2">
-                      <p className="text-2xl font-black tracking-tight">v{__APP_VERSION__}</p>
+                <div className="relative">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: accentHex, boxShadow: `0 0 14px ${accentHex}40` }}
+                      />
+                      <p className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground/60">Current Build</p>
+                    </div>
+
+                    <div className="mt-4 flex items-end gap-3 flex-wrap">
+                      <p className="text-[2.35rem] sm:text-[2.6rem] font-black tracking-[-0.05em] leading-none">v{__APP_VERSION__}</p>
                       <span
-                        className="mb-1 inline-flex items-center rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.22em]"
-                        style={{ backgroundColor: `${accentHex}12`, color: accentHex }}
+                        className="inline-flex h-9 items-center rounded-full px-3.5 text-[10px] font-black uppercase tracking-[0.2em] border"
+                        style={{ backgroundColor: `${accentHex}10`, color: accentHex, borderColor: `${accentHex}18` }}
                       >
                         {__BUILD_VARIANT__}
                       </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground mt-1.5">Build {__BUILD_DATE__}</p>
-                    <p className="text-[10px] text-muted-foreground/70 mt-1">
-                      {__BUILD_VARIANT__ === 'DEV' ? 'Development build' : 'Production build'}
-                    </p>
+
+                    <div className="mt-5 grid grid-cols-2 gap-3 max-w-[320px]">
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-[0.18em] text-muted-foreground/50">Built On</p>
+                        <p className="mt-1 text-[15px] font-semibold tracking-tight text-foreground/85">{__BUILD_DATE__}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black uppercase tracking-[0.18em] text-muted-foreground/50">Channel</p>
+                        <p className="mt-1 text-[15px] font-semibold tracking-tight text-foreground/85">
+                          {__BUILD_VARIANT__ === 'DEV' ? 'Development' : 'Production'}
+                        </p>
+                      </div>
+                    </div>
+
                     {isUpdateAvailable && (
-                      <p className="text-[10px] mt-2 font-semibold" style={{ color: accentHex }}>
-                        A newer build is ready to install.
-                      </p>
+                      <div
+                        className="mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em]"
+                        style={{ backgroundColor: `${accentHex}10`, color: accentHex }}
+                      >
+                        <span
+                          className="h-2 w-2 rounded-full animate-pulse"
+                          style={{ backgroundColor: accentHex }}
+                        />
+                        New Build Ready
+                      </div>
                     )}
                   </div>
                 </div>
