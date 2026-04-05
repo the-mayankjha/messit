@@ -32,22 +32,6 @@ export default function InstallPrompt() {
     return { supported: true, ios, standalone, android, chromeLike };
   }, []);
 
-  const browserHintPosition = useMemo(() => {
-    if (!installContext.android || !installContext.chromeLike) {
-      return {
-        top: '5.1rem',
-        right: '1rem',
-        arrowOffset: '0px',
-      };
-    }
-
-    return {
-      top: 'calc(env(safe-area-inset-top, 0px) + 3.4rem)',
-      right: '0.45rem',
-      arrowOffset: '8px',
-    };
-  }, [installContext.android, installContext.chromeLike]);
-
   useEffect(() => {
     if (!installContext.supported || installContext.standalone) return;
     if (localStorage.getItem(DISMISS_KEY) === 'true') return;
@@ -187,45 +171,6 @@ export default function InstallPrompt() {
 
                     {showBrowserSteps && !deferredPrompt && (
                       <>
-                        {installContext.android && installContext.chromeLike && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -12 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="pointer-events-none fixed z-[95] flex flex-col items-end gap-2"
-                            style={{
-                              top: browserHintPosition.top,
-                              right: browserHintPosition.right,
-                            }}
-                          >
-                            <motion.div
-                              animate={{
-                                y: activeBrowserStep === 0 ? [0, -9, 0] : [0, -3, 0],
-                                x: activeBrowserStep === 0 ? [0, 5, 0] : [0, 1, 0],
-                                opacity: [0.75, 1, 0.75],
-                                scale: activeBrowserStep === 0 ? [1, 1.08, 1] : [1, 1.03, 1],
-                              }}
-                              transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-                              className="text-3xl"
-                              style={{ color: accentHex, marginRight: browserHintPosition.arrowOffset }}
-                            >
-                              ↗
-                            </motion.div>
-                            <motion.div
-                              key={activeBrowserStep}
-                              initial={{ opacity: 0, y: -6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="max-w-[11.5rem] rounded-2xl border px-3 py-2 text-right text-[11px] font-bold uppercase tracking-[0.18em] shadow-xl"
-                              style={{
-                                color: accentHex,
-                                borderColor: `${accentHex}2c`,
-                                backgroundColor: effectiveTheme === 'dark' ? 'rgba(12, 12, 12, 0.92)' : 'rgba(255, 255, 255, 0.92)',
-                              }}
-                            >
-                              {activeBrowserStep === 0 ? 'Tap the three dots' : 'Choose Add to Home Screen'}
-                            </motion.div>
-                          </motion.div>
-                        )}
-
                         <div
                           className="rounded-[1.2rem] border p-3.5"
                           style={{
