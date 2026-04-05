@@ -24,15 +24,16 @@ export default function InstallPrompt() {
 
   const installContext = useMemo(() => {
     if (typeof window === 'undefined') {
-      return { supported: false, ios: false, standalone: false, android: false, chromeLike: false };
+      return { supported: false, ios: false, standalone: false, android: false, chromeLike: false, deviceLabel: 'phone' };
     }
 
     const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     const android = /Android/i.test(navigator.userAgent);
     const chromeLike = /Chrome|CriOS|Edg|SamsungBrowser|OPR/i.test(navigator.userAgent);
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const deviceLabel = ios ? 'iPhone' : android ? 'Android' : 'phone';
 
-    return { supported: true, ios, standalone, android, chromeLike };
+    return { supported: true, ios, standalone, android, chromeLike, deviceLabel };
   }, []);
 
   useEffect(() => {
@@ -155,7 +156,9 @@ export default function InstallPrompt() {
                   <div className="flex min-w-0 items-start gap-3.5">
                     <img src="/icon.png" alt="Messit" className="h-12 w-12 shrink-0 rounded-2xl object-cover sm:h-14 sm:w-14" />
                     <div className="min-w-0">
-                      <h3 className="text-base font-black tracking-tight sm:text-lg">Install Messit</h3>
+                      <h3 className="text-base font-black tracking-tight sm:text-lg">
+                        Get Messit on your {installContext.deviceLabel}
+                      </h3>
                       <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                         Add it to your phone for quicker launch, offline support, and an app-like experience.
                       </p>
@@ -188,7 +191,6 @@ export default function InstallPrompt() {
                         className="rounded-[1.2rem] border p-3.5"
                         style={{
                           borderColor: `${accentHex}24`,
-                          backgroundColor: `${accentHex}10`,
                         }}
                       >
                         <div className="flex items-center gap-2">
