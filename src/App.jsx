@@ -443,7 +443,12 @@ export default function App() {
 
       // 3. Prevent redundant syncs within the same session unless profile data changes
       const syncKey = `${auth0User?.email || user?.email}:${hostel}:${messType}:${role}`;
+      const blockedSyncKey = `messit-push-blocked:${syncKey}`;
       if (pushSyncAttemptedRef.current === syncKey) return;
+      if (sessionStorage.getItem(blockedSyncKey) === 'true') {
+        updatePushDebug({ stage: 'sync_skipped', reason: 'session_blocked_after_push_abort' });
+        return;
+      }
       pushSyncAttemptedRef.current = syncKey;
 
       try {
@@ -455,6 +460,16 @@ export default function App() {
             console.warn('Push sync subscription failed:', reason, error || '');
           }
           updatePushDebug({ lastSyncStatus: 'subscription_failed', lastError: error || reason });
+          const isPushServiceAbort =
+            reason === 'subscription_failed' &&
+            typeof error === 'string' &&
+            error.includes('Registration failed - push service error');
+
+          if (isPushServiceAbort) {
+            sessionStorage.setItem(blockedSyncKey, 'true');
+            updatePushDebug({ stage: 'sync_blocked', reason: 'push_service_error' });
+            return;
+          }
           // Reset attempt ref to allow retry on next render if it failed at subscription level
           pushSyncAttemptedRef.current = false;
           return;

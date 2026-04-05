@@ -1,4 +1,11 @@
-import { createAdminClient, sendPushToSubscriptions, alreadyDispatched, markDispatched } from '../_shared/push.ts';
+import {
+  createAdminClient,
+  sendPushToSubscriptions,
+  alreadyDispatched,
+  markDispatched,
+  createCorsPreflightResponse,
+  createJsonResponse,
+} from '../_shared/push.ts';
 
 const MEAL_WINDOWS = [
   { name: 'Breakfast', key: 'breakfast', hour: 7, minute: 10 },
@@ -19,8 +26,14 @@ function getIndiaTime() {
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+
+  if (req.method === 'OPTIONS') {
+    return createCorsPreflightResponse(origin);
+  }
+
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+    return createJsonResponse({ error: 'Method not allowed' }, { status: 405 }, origin);
   }
 
   const indiaTime = getIndiaTime();
@@ -33,19 +46,19 @@ Deno.serve(async (req) => {
   );
 
   if (!meal) {
-    return Response.json({ 
+    return createJsonResponse({ 
       success: true, 
       skipped: true, 
       reason: 'no_meal_due',
       timeSearched: `${currentHour}:${currentMinute} IST` 
-    });
+    }, { status: 200 }, origin);
   }
 
   const dateString = indiaTime.toISOString().split('T')[0];
   const dedupeKey = `${dateString}:${meal.key}`;
   
   if (await alreadyDispatched('meal_reminder', dedupeKey)) {
-    return Response.json({ success: true, skipped: true, reason: 'already_dispatched' });
+    return createJsonResponse({ success: true, skipped: true, reason: 'already_dispatched' }, { status: 200 }, origin);
   }
 
   const dayOfMonth = indiaTime.getUTCDate().toString();
@@ -56,11 +69,11 @@ Deno.serve(async (req) => {
     .select('endpoint, p256dh, auth, hostel, mess_type, email');
 
   if (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return createJsonResponse({ error: error.message }, { status: 500 }, origin);
   }
 
   if (!subscriptions || subscriptions.length === 0) {
-    return Response.json({ success: true, sent: 0, reason: 'no_subscriptions' });
+    return createJsonResponse({ success: true, sent: 0, reason: 'no_subscriptions' }, { status: 200 }, origin);
   }
 
   // Cache menus by hostel:messType
@@ -107,10 +120,10 @@ Deno.serve(async (req) => {
   const successfulCount = results.filter(r => r.status === 'fulfilled' && (r.value as any).success).length;
   await markDispatched('meal_reminder', dedupeKey, { meal: meal.key, sentTotal: successfulCount });
 
-  return Response.json({ 
+  return createJsonResponse({ 
     success: true, 
     sent: successfulCount, 
     meal: meal.key,
     results 
-  });
+  }, { status: 200 }, origin);
 });

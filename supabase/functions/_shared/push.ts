@@ -1,6 +1,34 @@
 import webpush from 'npm:web-push@3.6.7';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
+export function getCorsHeaders(origin?: string | null) {
+  return {
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+    Vary: 'Origin',
+  };
+}
+
+export function createCorsPreflightResponse(origin?: string | null) {
+  return new Response('ok', {
+    status: 200,
+    headers: getCorsHeaders(origin),
+  });
+}
+
+export function createJsonResponse(data: Record<string, unknown>, init?: ResponseInit, origin?: string | null) {
+  return new Response(JSON.stringify(data), {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...getCorsHeaders(origin),
+      ...(init?.headers || {}),
+    },
+  });
+}
+
 export function createAdminClient() {
   const url = Deno.env.get('SUPABASE_URL')!;
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

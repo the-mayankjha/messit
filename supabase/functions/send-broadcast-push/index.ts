@@ -1,8 +1,20 @@
-import { createAdminClient, sendPushToSubscriptions, markDispatched } from '../_shared/push.ts';
+import {
+  createAdminClient,
+  sendPushToSubscriptions,
+  markDispatched,
+  createCorsPreflightResponse,
+  createJsonResponse,
+} from '../_shared/push.ts';
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get('origin');
+
+  if (req.method === 'OPTIONS') {
+    return createCorsPreflightResponse(origin);
+  }
+
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 });
+    return createJsonResponse({ error: 'Method not allowed' }, { status: 405 }, origin);
   }
 
   const body = await req.json();
@@ -12,7 +24,7 @@ Deno.serve(async (req) => {
   const url = body.url || '/';
 
   if (!announcementId || !title || !content) {
-    return Response.json({ error: 'announcementId, title and content are required' }, { status: 400 });
+    return createJsonResponse({ error: 'announcementId, title and content are required' }, { status: 400 }, origin);
   }
 
   const supabase = createAdminClient();
@@ -21,7 +33,7 @@ Deno.serve(async (req) => {
     .select('endpoint, p256dh, auth');
 
   if (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return createJsonResponse({ error: error.message }, { status: 500 }, origin);
   }
 
   const payload = {
@@ -35,5 +47,5 @@ Deno.serve(async (req) => {
   const results = await sendPushToSubscriptions(subscriptions ?? [], payload);
   await markDispatched('broadcast', `announcement:${announcementId}`, payload);
 
-  return Response.json({ success: true, sent: results.length, results });
+  return createJsonResponse({ success: true, sent: results.length, results }, { status: 200 }, origin);
 });

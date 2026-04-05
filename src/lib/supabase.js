@@ -472,7 +472,19 @@ export async function deletePushSubscription(endpoint) {
 }
 
 export async function sendBroadcastPushNotification({ announcementId, title, content, url = '/' }) {
+  const isLocalhost =
+    typeof window !== 'undefined' &&
+    ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
   try {
+    if (!import.meta.env.PROD || isLocalhost) {
+      return {
+        success: false,
+        skipped: true,
+        reason: 'Broadcast push is disabled in local/development mode.',
+      };
+    }
+
     const { data, error } = await supabase.functions.invoke('send-broadcast-push', {
       body: {
         announcementId,
@@ -485,7 +497,19 @@ export async function sendBroadcastPushNotification({ announcementId, title, con
     if (error) throw error;
     return { success: true, data };
   } catch (err) {
-    console.error('Broadcast Push Invoke Error:', err.message);
-    return { success: false, error: err.message };
+    const message = err?.message || 'Unknown broadcast push error';
+    const isExpectedBackgroundFailure =
+      message.includes('Failed to fetch') ||
+      message.includes('FunctionsHttpError') ||
+      message.includes('non-2xx status code') ||
+      message.includes('NetworkError');
+
+    if (!isExpectedBackgroundFailure) {
+      console.error('Broadcast Push Invoke Error:', message);
+    } else {
+      console.warn('Broadcast push unavailable:', message);
+    }
+
+    return { success: false, error: message };
   }
 }

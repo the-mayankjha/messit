@@ -231,14 +231,16 @@ export default function AdminDashboard() {
 
       const createdAnnouncement = Array.isArray(res.data) ? res.data[0] : res.data;
       if (!editingAnnouncement && createdAnnouncement?.id) {
-        sendBroadcastPushNotification({
+        const pushResult = await sendBroadcastPushNotification({
           announcementId: createdAnnouncement.id,
           title: announcementTitle,
           content: announcementBody,
           url: '/',
-        }).catch((err) => {
-          console.error('Broadcast push failed:', err);
         });
+
+        if (!pushResult?.success && !pushResult?.skipped) {
+          console.warn('Broadcast push did not send:', pushResult?.error || 'Unknown error');
+        }
       }
 
       fetchAnnouncements(); // Sync from server for guaranteed consistency
