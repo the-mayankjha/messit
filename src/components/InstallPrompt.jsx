@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { EllipsisVertical, HousePlus, Plus, Share2, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { ACCENT_COLORS } from '../constants/colors';
-import { DownloadIcon } from './ui/icons/DownloadIcon';
+import { ArrowRightIcon } from './ui/icons/ArrowRightIcon';
 
 const DISMISS_KEY = 'messit-install-dismissed';
 
@@ -14,6 +14,7 @@ export default function InstallPrompt() {
   const [isInstalling, setIsInstalling] = useState(false);
   const [showBrowserSteps, setShowBrowserSteps] = useState(false);
   const [activeBrowserStep, setActiveBrowserStep] = useState(0);
+  const buttonIconRef = useRef(null);
 
   const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   const effectiveTheme = theme === 'system' ? systemTheme : theme;
@@ -80,10 +81,12 @@ export default function InstallPrompt() {
     if (!deferredPrompt) {
       setShowBrowserSteps(true);
       setActiveBrowserStep(0);
+      buttonIconRef.current?.startAnimation?.();
       return;
     }
 
     setIsInstalling(true);
+    buttonIconRef.current?.startAnimation?.();
     deferredPrompt.prompt();
     await deferredPrompt.userChoice;
     setDeferredPrompt(null);
@@ -121,12 +124,7 @@ export default function InstallPrompt() {
               <div className="relative p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-3.5">
-                    <div
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
-                      style={{ backgroundColor: `${accentHex}12` }}
-                    >
-                      <img src="/icon.png" alt="Messit" className="h-7 w-7 rounded-lg object-cover" />
-                    </div>
+                    <img src="/icon.png" alt="Messit" className="h-12 w-12 shrink-0 rounded-2xl object-cover sm:h-14 sm:w-14" />
                     <div className="min-w-0">
                       <h3 className="text-base font-black tracking-tight sm:text-lg">Install Messit</h3>
                       <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
@@ -156,123 +154,126 @@ export default function InstallPrompt() {
                   </div>
                 ) : (
                   <div className="mt-4 space-y-3">
-                    {!deferredPrompt && (
-                      <div className="rounded-[1.2rem] border border-border/30 bg-muted/15 p-3.5">
-                        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-muted-foreground/60">
-                          Browser Install
-                        </p>
-                        <p className="mt-2 text-sm leading-relaxed text-foreground/85">
-                          If the direct install prompt is not ready yet, use your browser menu and choose
-                          <span className="font-semibold"> Install app</span> or
-                          <span className="font-semibold"> Add to Home Screen</span>.
-                        </p>
+                    {showBrowserSteps && !deferredPrompt && (
+                      <div
+                        className="rounded-[1.2rem] border p-3.5"
+                        style={{
+                          borderColor: `${accentHex}24`,
+                          backgroundColor: `${accentHex}10`,
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <p
+                            className="text-[11px] font-black uppercase tracking-[0.18em]"
+                            style={{ color: accentHex }}
+                          >
+                            How To Install
+                          </p>
+                          <div className="flex gap-1.5">
+                            {[0, 1].map((step) => (
+                              <span
+                                key={step}
+                                className="h-1.5 w-1.5 rounded-full transition-all"
+                                style={{
+                                  backgroundColor: step === activeBrowserStep ? accentHex : `${accentHex}30`,
+                                  transform: step === activeBrowserStep ? 'scale(1.15)' : 'scale(1)',
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="mt-3 grid gap-2.5">
+                          <motion.div
+                            animate={{
+                              borderColor: activeBrowserStep === 0 ? `${accentHex}52` : 'rgba(0,0,0,0)',
+                              backgroundColor: activeBrowserStep === 0 ? `${accentHex}14` : 'transparent',
+                            }}
+                            className="flex items-start gap-3 rounded-2xl border px-3 py-3"
+                          >
+                            <div
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black"
+                              style={{ backgroundColor: `${accentHex}18`, color: accentHex }}
+                            >
+                              1
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <EllipsisVertical size={15} style={{ color: accentHex }} />
+                                <p className="text-sm font-semibold text-foreground">Open the browser menu</p>
+                              </div>
+                              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                                Tap the three-dot menu in the top-right corner of your browser.
+                              </p>
+                            </div>
+                          </motion.div>
+
+                          <motion.div
+                            animate={{
+                              borderColor: activeBrowserStep === 1 ? `${accentHex}52` : 'rgba(0,0,0,0)',
+                              backgroundColor: activeBrowserStep === 1 ? `${accentHex}14` : 'transparent',
+                            }}
+                            className="flex items-start gap-3 rounded-2xl border px-3 py-3"
+                          >
+                            <div
+                              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black"
+                              style={{ backgroundColor: `${accentHex}18`, color: accentHex }}
+                            >
+                              2
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <HousePlus size={15} style={{ color: accentHex }} />
+                                <p className="text-sm font-semibold text-foreground">Install from the menu</p>
+                              </div>
+                              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                                Choose <span className="font-semibold text-foreground">Add to Home Screen</span> or
+                                <span className="font-semibold text-foreground"> Install app</span>.
+                              </p>
+                            </div>
+                          </motion.div>
+                        </div>
                       </div>
                     )}
 
-                    {showBrowserSteps && !deferredPrompt && (
-                      <>
-                        <div
-                          className="rounded-[1.2rem] border p-3.5"
-                          style={{
-                            borderColor: `${accentHex}24`,
-                            backgroundColor: `${accentHex}10`,
-                          }}
-                        >
-                          <div className="flex items-center gap-2">
-                            <p
-                              className="text-[11px] font-black uppercase tracking-[0.18em]"
-                              style={{ color: accentHex }}
-                            >
-                              Quick Steps
-                            </p>
-                            <div className="flex gap-1.5">
-                              {[0, 1].map((step) => (
-                                <span
-                                  key={step}
-                                  className="h-1.5 w-1.5 rounded-full transition-all"
-                                  style={{
-                                    backgroundColor: step === activeBrowserStep ? accentHex : `${accentHex}30`,
-                                    transform: step === activeBrowserStep ? 'scale(1.15)' : 'scale(1)',
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="mt-3 grid gap-2.5">
-                            <motion.div
-                              animate={{
-                                borderColor: activeBrowserStep === 0 ? `${accentHex}52` : 'rgba(0,0,0,0)',
-                                backgroundColor: activeBrowserStep === 0 ? `${accentHex}14` : 'transparent',
-                              }}
-                              className="flex items-start gap-3 rounded-2xl border px-3 py-3"
-                            >
-                              <div
-                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black"
-                                style={{ backgroundColor: `${accentHex}18`, color: accentHex }}
-                              >
-                                1
-                              </div>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <EllipsisVertical size={15} style={{ color: accentHex }} />
-                                  <p className="text-sm font-semibold text-foreground">Open the browser menu</p>
-                                </div>
-                                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                                  Tap the three-dot menu in the top-right corner of your browser.
-                                </p>
-                              </div>
-                            </motion.div>
-
-                            <motion.div
-                              animate={{
-                                borderColor: activeBrowserStep === 1 ? `${accentHex}52` : 'rgba(0,0,0,0)',
-                                backgroundColor: activeBrowserStep === 1 ? `${accentHex}14` : 'transparent',
-                              }}
-                              className="flex items-start gap-3 rounded-2xl border px-3 py-3"
-                            >
-                              <div
-                                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-sm font-black"
-                                style={{ backgroundColor: `${accentHex}18`, color: accentHex }}
-                              >
-                                2
-                              </div>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <HousePlus size={15} style={{ color: accentHex }} />
-                                  <p className="text-sm font-semibold text-foreground">Install from the menu</p>
-                                </div>
-                                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                                  Choose <span className="font-semibold text-foreground">Add to Home Screen</span> or
-                                  <span className="font-semibold text-foreground"> Install app</span>.
-                                </p>
-                              </div>
-                            </motion.div>
-                          </div>
-                        </div>
-                      </>
-                    )}
-
                     <div className="flex flex-col gap-2.5 sm:flex-row">
-                    <button
-                      onClick={handleInstall}
-                      className="flex flex-1 items-center justify-center gap-3 rounded-[1.25rem] border px-4 py-3.5 font-bold transition-all disabled:opacity-50"
-                      style={{
-                        backgroundColor: `${accentHex}12`,
-                        color: accentHex,
-                        borderColor: `${accentHex}24`,
-                      }}
-                      disabled={isInstalling}
-                    >
-                      <DownloadIcon size={18} />
-                      {isInstalling ? 'Installing...' : deferredPrompt ? 'Install Now' : 'Open Browser Install'}
-                    </button>
-                    <button
-                      onClick={closePrompt}
-                      className="rounded-[1.25rem] border border-border/35 px-4 py-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/20 hover:text-foreground"
-                    >
-                      Maybe Later
-                    </button>
+                      <motion.button
+                        onClick={handleInstall}
+                        className="flex flex-1 items-center justify-center gap-3 rounded-[1.25rem] border px-4 py-3.5 font-bold transition-all disabled:opacity-50"
+                        style={{
+                          backgroundColor: `${accentHex}12`,
+                          color: accentHex,
+                          borderColor: `${accentHex}24`,
+                        }}
+                        disabled={isInstalling}
+                        whileHover={{ scale: 1.01, y: -1 }}
+                        whileTap={{ scale: 0.985 }}
+                        animate={
+                          !deferredPrompt && !showBrowserSteps
+                            ? {
+                                boxShadow: [
+                                  `0 0 0 0 ${accentHex}00`,
+                                  `0 10px 28px -16px ${accentHex}66`,
+                                  `0 0 0 0 ${accentHex}00`,
+                                ],
+                              }
+                            : undefined
+                        }
+                        transition={
+                          !deferredPrompt && !showBrowserSteps
+                            ? { duration: 1.8, repeat: Infinity, ease: 'easeInOut' }
+                            : undefined
+                        }
+                      >
+                        <ArrowRightIcon ref={buttonIconRef} size={20} />
+                        {isInstalling ? 'Installing...' : deferredPrompt ? 'Install Now' : 'Show Install Steps'}
+                      </motion.button>
+                      <button
+                        onClick={closePrompt}
+                        className="rounded-[1.25rem] border border-border/35 px-4 py-3.5 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/20 hover:text-foreground"
+                      >
+                        Maybe Later
+                      </button>
                     </div>
                   </div>
                 )}
