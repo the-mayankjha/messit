@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { EllipsisVertical, HousePlus, Plus, Share2, X } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { ACCENT_COLORS } from '../constants/colors';
-import { ArrowRightIcon } from './ui/icons/ArrowRightIcon';
+import { DownloadIcon } from './ui/icons/DownloadIcon';
 
 const DISMISS_KEY = 'messit-install-dismissed';
 
@@ -72,6 +72,17 @@ export default function InstallPrompt() {
     return () => window.clearInterval(interval);
   }, [showBrowserSteps]);
 
+  useEffect(() => {
+    if (!buttonIconRef.current) return;
+
+    if (isOpen) {
+      buttonIconRef.current.startAnimation?.();
+      return () => buttonIconRef.current?.stopAnimation?.();
+    }
+
+    buttonIconRef.current.stopAnimation?.();
+  }, [isOpen]);
+
   const closePrompt = () => {
     localStorage.setItem(DISMISS_KEY, 'true');
     setIsOpen(false);
@@ -81,12 +92,10 @@ export default function InstallPrompt() {
     if (!deferredPrompt) {
       setShowBrowserSteps(true);
       setActiveBrowserStep(0);
-      buttonIconRef.current?.startAnimation?.();
       return;
     }
 
     setIsInstalling(true);
-    buttonIconRef.current?.startAnimation?.();
     deferredPrompt.prompt();
     await deferredPrompt.userChoice;
     setDeferredPrompt(null);
@@ -265,7 +274,7 @@ export default function InstallPrompt() {
                             : undefined
                         }
                       >
-                        <ArrowRightIcon ref={buttonIconRef} size={20} />
+                        <DownloadIcon ref={buttonIconRef} size={20} className="-rotate-90" />
                         {isInstalling ? 'Installing...' : deferredPrompt ? 'Install Now' : 'Show Install Steps'}
                       </motion.button>
                       <button
