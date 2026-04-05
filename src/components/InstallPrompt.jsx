@@ -12,18 +12,23 @@ export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
+  const [showBrowserSteps, setShowBrowserSteps] = useState(false);
 
   const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   const effectiveTheme = theme === 'system' ? systemTheme : theme;
   const accentHex = ACCENT_COLORS[accentColor]?.[effectiveTheme] || ACCENT_COLORS.Blue[effectiveTheme];
 
   const installContext = useMemo(() => {
-    if (typeof window === 'undefined') return { supported: false, ios: false, standalone: false };
+    if (typeof window === 'undefined') {
+      return { supported: false, ios: false, standalone: false, android: false, chromeLike: false };
+    }
 
     const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const android = /Android/i.test(navigator.userAgent);
+    const chromeLike = /Chrome|CriOS|Edg|SamsungBrowser|OPR/i.test(navigator.userAgent);
     const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
-    return { supported: true, ios, standalone };
+    return { supported: true, ios, standalone, android, chromeLike };
   }, []);
 
   useEffect(() => {
@@ -33,6 +38,7 @@ export default function InstallPrompt() {
     const handleBeforeInstallPrompt = (event) => {
       event.preventDefault();
       setDeferredPrompt(event);
+      setShowBrowserSteps(false);
       window.setTimeout(() => setIsOpen(true), 900);
     };
 
@@ -60,7 +66,10 @@ export default function InstallPrompt() {
   };
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      setShowBrowserSteps(true);
+      return;
+    }
 
     setIsInstalling(true);
     deferredPrompt.prompt();
@@ -141,9 +150,31 @@ export default function InstallPrompt() {
                           Browser Install
                         </p>
                         <p className="mt-2 text-sm leading-relaxed text-foreground/85">
-                          If your browser supports installation, use the browser menu and choose
-                          <span className="font-semibold"> Install App</span> or
+                          If the direct install prompt is not ready yet, use your browser menu and choose
+                          <span className="font-semibold"> Install app</span> or
                           <span className="font-semibold"> Add to Home Screen</span>.
+                        </p>
+                      </div>
+                    )}
+
+                    {showBrowserSteps && !deferredPrompt && (
+                      <div
+                        className="rounded-[1.2rem] border p-3.5"
+                        style={{
+                          borderColor: `${accentHex}24`,
+                          backgroundColor: `${accentHex}10`,
+                        }}
+                      >
+                        <p
+                          className="text-[11px] font-black uppercase tracking-[0.18em]"
+                          style={{ color: accentHex }}
+                        >
+                          Quick Steps
+                        </p>
+                        <p className="mt-2 text-sm leading-relaxed text-foreground/90">
+                          {installContext.android && installContext.chromeLike
+                            ? 'Tap the three-dot menu in the top-right of your browser, then choose Install app or Add to Home screen.'
+                            : 'Open your browser menu and choose Install app or Add to Home Screen to place Messit on your phone.'}
                         </p>
                       </div>
                     )}
@@ -151,13 +182,13 @@ export default function InstallPrompt() {
                     <div className="flex flex-col gap-2.5 sm:flex-row">
                     <button
                       onClick={handleInstall}
-                      disabled={!deferredPrompt || isInstalling}
                       className="flex flex-1 items-center justify-center gap-3 rounded-[1.25rem] border px-4 py-3.5 font-bold transition-all disabled:opacity-50"
                       style={{
                         backgroundColor: `${accentHex}12`,
                         color: accentHex,
                         borderColor: `${accentHex}24`,
                       }}
+                      disabled={isInstalling}
                     >
                       <DownloadIcon size={18} />
                       {isInstalling ? 'Installing...' : deferredPrompt ? 'Install Now' : 'Open Browser Install'}
