@@ -45,9 +45,9 @@ const HousePlusIcon = forwardRef(({ onMouseEnter, onMouseLeave, className, size 
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       {...props}
-    >
-      <svg
-        fill="none"
+      >
+        <svg
+          fill="none"
         height={size}
         stroke="currentColor"
         strokeLinecap="round"
@@ -56,10 +56,9 @@ const HousePlusIcon = forwardRef(({ onMouseEnter, onMouseLeave, className, size 
         viewBox="0 0 24 24"
         width={size}
         xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d="m2 10 10-8 10 8" />
-        <path d="M4 12v8a2 2 0 0 0 2 2h5" />
-        <path d="M20 10v3" />
+        >
+        <path d="M2.75 10 12 2.75 21.25 10" />
+        <path d="M5.25 8.9V20a1 1 0 0 0 1 1H9v-5.25a1.75 1.75 0 0 1 1.75-1.75h2.5A1.75 1.75 0 0 1 15 15.75V21h1.1" />
         <motion.g
           animate={controls}
           variants={{
@@ -76,10 +75,10 @@ const HousePlusIcon = forwardRef(({ onMouseEnter, onMouseLeave, className, size 
               },
             },
           }}
-          style={{ transformOrigin: "17px 16px" }}
+          style={{ transformOrigin: "18px 17px" }}
         >
-          <path d="M15 16h6" />
-          <path d="M18 13v6" />
+          <path d="M16 17.25h4.5" />
+          <path d="M18.25 15v4.5" />
         </motion.g>
       </svg>
     </div>
