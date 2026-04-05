@@ -1,44 +1,42 @@
-# Push Notifications Setup
+# Supabase Push Notifications Setup Guide
 
-This project now includes web push support for:
+To enable push notifications (Meal Reminders, Broadcasts, Build Updates), you must configure your VAPID secrets in Supabase.
 
-- app update availability
-- broadcast messages
-- meal reminders
+## 1. Secrets Configuration
 
-## Required env vars
+Run these commands using the Supabase CLI or set them in the **Settings > API > Edge Function Secrets** section of your Supabase Dashboard:
 
-Client `.env`:
+```bash
+# Your email or website URL (required by push services)
+supabase secrets set VAPID_SUBJECT="mailto:your-email@example.com"
 
-- `VITE_VAPID_PUBLIC_KEY=...`
+# The Public Key from your .env (VITE_VAPID_PUBLIC_KEY)
+supabase secrets set VAPID_PUBLIC_KEY="BO8x..."
 
-Supabase Edge Functions secrets:
+# The Private Key corresponding to your Public Key
+supabase secrets set VAPID_PRIVATE_KEY="YOUR_PRIVATE_KEY"
+```
 
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `VAPID_SUBJECT=mailto:you@example.com`
-- `VAPID_PUBLIC_KEY=...`
-- `VAPID_PRIVATE_KEY=...`
+## 2. Deploy Functions
 
-## Database
+Deploy the functions to your Supabase project:
 
-Run the migration in:
+```bash
+supabase functions deploy _shared
+supabase functions deploy send-meal-reminders
+supabase functions deploy send-broadcast-push
+supabase functions deploy send-build-update-push
+```
 
-- `supabase/migrations/20260405_push_notifications.sql`
+## 3. Enable Automation (Meal Reminders)
 
-## Deploy functions
+1. Go to **Database > Extensions** in the Supabase Dashboard.
+2. Enable `pg_cron` and `pg_net`.
+3. Run the SQL in `supabase/migrations/20260406_cron_reminders.sql` in the **SQL Editor**.
+   - **Note**: Replace `YOUR_SERVICE_ROLE_KEY` with the key found in **Settings > API**.
 
-Deploy:
+## 4. Troubleshooting
 
-- `send-build-update-push`
-- `send-broadcast-push`
-- `send-meal-reminders`
-
-## Scheduling
-
-Set `send-meal-reminders` on a cron schedule every minute or every 5 minutes.
-
-## Triggering pushes
-
-- Call `send-build-update-push` after a new production build is deployed.
-- Call `send-broadcast-push` after an announcement is created.
+- **Internal Server Error**: Check if all 3 VAPID secrets are set.
+- **403 Forbidden**: Ensure the `Authorization: Bearer` header uses the `service_role` key in the cron job.
+- **No notifications**: Check the `notification_dispatch_log` table to see if the server attempted to send them.

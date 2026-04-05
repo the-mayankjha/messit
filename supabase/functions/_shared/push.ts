@@ -15,21 +15,32 @@ export function configureWebPush() {
   const publicKey = Deno.env.get('VAPID_PUBLIC_KEY')!;
   const privateKey = Deno.env.get('VAPID_PRIVATE_KEY')!;
 
+  if (!subject || !publicKey || !privateKey) {
+    throw new Error('VAPID Secrets (subject, public key, or private key) are not configured in Supabase environment.');
+  }
+
   webpush.setVapidDetails(subject, publicKey, privateKey);
   return webpush;
 }
 
 export async function sendPushToSubscriptions(subscriptions: any[], payload: Record<string, unknown>) {
   const supabase = createAdminClient();
-  const webPushClient = configureWebPush();
+  let webPushClient;
+  
+  try {
+    webPushClient = configureWebPush();
+  } catch (err) {
+    console.error('VAPID Configuration Error:', err.message);
+    return subscriptions.map(s => ({ endpoint: s.endpoint, success: false, message: err.message }));
+  }
 
   const results = await Promise.allSettled(
     subscriptions.map(async (subscription) => {
       const pushSubscription = {
         endpoint: subscription.endpoint,
         keys: {
-          p256dh: subscription.p256dh,
-          auth: subscription.auth,
+          p256dh: subscription.p256dh || subscription.keys?.p256dh,
+          auth: subscription.auth || subscription.keys?.auth,
         },
       };
 
@@ -39,7 +50,9 @@ export async function sendPushToSubscriptions(subscriptions: any[], payload: Rec
       } catch (error) {
         const statusCode = error?.statusCode ?? 500;
 
+        // If the subscription is no longer valid (expired or unsubscribed), prune it
         if (statusCode === 404 || statusCode === 410) {
+          console.log(`Pruning stale subscription: ${subscription.endpoint}`);
           await supabase
             .from('push_subscriptions')
             .delete()
@@ -56,7 +69,11 @@ export async function sendPushToSubscriptions(subscriptions: any[], payload: Rec
     }),
   );
 
-  return results.map((entry) => entry.status === 'fulfilled' ? entry.value : { success: false, message: String(entry.reason) });
+  return results.map((entry) => 
+    entry.status === 'fulfilled' 
+      ? entry.value 
+      : { success: false, message: String(entry.reason) }
+  );
 }
 
 export async function alreadyDispatched(dispatchType: string, dedupeKey: string) {

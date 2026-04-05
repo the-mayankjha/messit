@@ -28,7 +28,7 @@ import { CloudUploadIcon } from './components/ui/icons/CloudUploadIcon';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import { WifiAnimatedIcon } from './components/ui/icons/WifiAnimatedIcon';
 import { WifiOffAnimatedIcon } from './components/ui/icons/WifiOffAnimatedIcon';
-import { subscribeToPushNotifications } from './utils/push';
+import { subscribeToPushNotifications, updatePushDebug } from './utils/push';
 
 export default function App() {
   const pushSyncAttemptedRef = useRef(false);
@@ -432,21 +432,30 @@ export default function App() {
 
   useEffect(() => {
     const syncPushSubscription = async () => {
-      if (pushSyncAttemptedRef.current) return;
+      // 1. Pre-check: Don't sync if offline or push not supported
       if (!isOnline || !('Notification' in window)) return;
-      if (Notification.permission !== 'granted') return;
-      pushSyncAttemptedRef.current = true;
+      
+      // 2. Permission check: Only sync if granted
+      if (Notification.permission !== 'granted') {
+          updatePushDebug({ stage: 'sync_skipped', reason: 'permission_not_granted' });
+          return;
+      }
+
+      // 3. Prevent redundant syncs within the same session unless profile data changes
+      const syncKey = `${auth0User?.email || user?.email}:${hostel}:${messType}:${role}`;
+      if (pushSyncAttemptedRef.current === syncKey) return;
+      pushSyncAttemptedRef.current = syncKey;
 
       try {
+        updatePushDebug({ stage: 'sync_start' });
         const { success, subscription, reason, error } = await subscribeToPushNotifications();
+        
         if (!success || !subscription) {
           if (reason && reason !== 'unsupported') {
-            console.warn('Push subscription unavailable:', reason, error || '');
+            console.warn('Push sync subscription failed:', reason, error || '');
           }
-          window.__messitPushDebug = {
-            ...(window.__messitPushDebug || {}),
-            lastSyncStatus: 'failed',
-          };
+          updatePushDebug({ lastSyncStatus: 'subscription_failed', lastError: error || reason });
+          // Reset attempt ref to allow retry on next render if it failed at subscription level
           pushSyncAttemptedRef.current = false;
           return;
         }
@@ -463,26 +472,15 @@ export default function App() {
         });
 
         if (!result.success) {
-          console.warn('Push subscription sync failed:', result.error);
-          window.__messitPushDebug = {
-            ...(window.__messitPushDebug || {}),
-            lastSyncStatus: 'db_failed',
-            dbError: result.error,
-          };
+          console.warn('Push backend sync failed:', result.error);
+          updatePushDebug({ lastSyncStatus: 'db_failed', dbError: result.error });
           pushSyncAttemptedRef.current = false;
         } else {
-          window.__messitPushDebug = {
-            ...(window.__messitPushDebug || {}),
-            lastSyncStatus: 'db_saved',
-          };
+          updatePushDebug({ lastSyncStatus: 'synced_successfully', lastSyncTime: new Date().toISOString() });
         }
       } catch (error) {
-        console.warn('Push subscription sync crashed:', error?.message || String(error));
-        window.__messitPushDebug = {
-          ...(window.__messitPushDebug || {}),
-          lastSyncStatus: 'crashed',
-          crashError: error?.message || String(error),
-        };
+        console.error('Push sync process crashed:', error);
+        updatePushDebug({ lastSyncStatus: 'crashed', crashError: error?.message || String(error) });
         pushSyncAttemptedRef.current = false;
       }
     };
