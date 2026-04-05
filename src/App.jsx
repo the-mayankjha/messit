@@ -27,8 +27,10 @@ import { CloudUploadIcon } from './components/ui/icons/CloudUploadIcon';
 import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import { WifiAnimatedIcon } from './components/ui/icons/WifiAnimatedIcon';
 import { WifiOffAnimatedIcon } from './components/ui/icons/WifiOffAnimatedIcon';
+import { subscribeToPushNotifications } from './utils/push';
 
 export default function App() {
+  const pushSyncAttemptedRef = useRef(false);
   const { 
     theme, 
     accentColor,
@@ -39,6 +41,7 @@ export default function App() {
     isOnboarded,
     setIsOnboarded,
     setUser,
+    user,
     setProfile,
     hostel, // Track profile completion
     messType, // Support cloud sync
@@ -425,6 +428,88 @@ export default function App() {
       return () => clearTimeout(timer);
     }
   }, [isNotificationPending, setNotificationPending]);
+
+  useEffect(() => {
+    const syncPushSubscription = async () => {
+      if (pushSyncAttemptedRef.current) return;
+      if (!isOnline || !('Notification' in window)) return;
+      if (Notification.permission !== 'granted') return;
+      pushSyncAttemptedRef.current = true;
+
+      try {
+        const { success, subscription, reason, error } = await subscribeToPushNotifications();
+        if (!success || !subscription) {
+          if (reason && reason !== 'unsupported') {
+            console.warn('Push subscription unavailable:', reason, error || '');
+          }
+          window.__messitPushDebug = {
+            ...(window.__messitPushDebug || {}),
+            lastSyncStatus: 'failed',
+          };
+          pushSyncAttemptedRef.current = false;
+          return;
+        }
+
+        const serializedSubscription = subscription.toJSON();
+        const { upsertPushSubscription } = await import('./lib/supabase');
+
+        const result = await upsertPushSubscription({
+          email: auth0User?.email || user?.email || null,
+          subscription: serializedSubscription,
+          hostel,
+          messType,
+          role,
+        });
+
+        if (!result.success) {
+          console.warn('Push subscription sync failed:', result.error);
+          window.__messitPushDebug = {
+            ...(window.__messitPushDebug || {}),
+            lastSyncStatus: 'db_failed',
+            dbError: result.error,
+          };
+          pushSyncAttemptedRef.current = false;
+        } else {
+          window.__messitPushDebug = {
+            ...(window.__messitPushDebug || {}),
+            lastSyncStatus: 'db_saved',
+          };
+        }
+      } catch (error) {
+        console.warn('Push subscription sync crashed:', error?.message || String(error));
+        window.__messitPushDebug = {
+          ...(window.__messitPushDebug || {}),
+          lastSyncStatus: 'crashed',
+          crashError: error?.message || String(error),
+        };
+        pushSyncAttemptedRef.current = false;
+      }
+    };
+
+    syncPushSubscription();
+  }, [auth0User?.email, user?.email, hostel, messType, role, isOnline]);
+
+  useEffect(() => {
+    const handleUpdateAvailable = () => {
+      const notifiedKey = `messit-update-available-${__APP_VERSION__}`;
+
+      if (sessionStorage.getItem(notifiedKey)) return;
+      sessionStorage.setItem(notifiedKey, 'true');
+
+      sendNotification(
+        null,
+        notificationMode,
+        'Latest App Update Available',
+        `A newer Messit build is ready. Open Settings and tap Get Latest Version to update from v${__APP_VERSION__}.`
+      );
+    };
+
+    window.addEventListener('messit-update-available', handleUpdateAvailable);
+
+    return () => {
+      window.removeEventListener('messit-update-available', handleUpdateAvailable);
+    };
+  }, [notificationMode]);
 
   // 2. CONDITIONAL RETURNS (After all hooks)
 

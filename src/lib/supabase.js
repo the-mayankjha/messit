@@ -418,3 +418,74 @@ export async function revokeUserRole(email) {
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * Persist a web push subscription for the current device.
+ */
+export async function upsertPushSubscription({
+  email,
+  subscription,
+  hostel = null,
+  messType = null,
+  role = 'None',
+  buildVersion = __APP_VERSION__,
+}) {
+  try {
+    const payload = {
+      email: email || null,
+      endpoint: subscription.endpoint,
+      p256dh: subscription.keys?.p256dh || null,
+      auth: subscription.keys?.auth || null,
+      hostel,
+      mess_type: messType,
+      role,
+      build_version: buildVersion,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('push_subscriptions')
+      .upsert(payload, { onConflict: 'endpoint' })
+      .select();
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (err) {
+    console.error('Push Subscription Upsert Error:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function deletePushSubscription(endpoint) {
+  try {
+    const { error } = await supabase
+      .from('push_subscriptions')
+      .delete()
+      .eq('endpoint', endpoint);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (err) {
+    console.error('Push Subscription Delete Error:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function sendBroadcastPushNotification({ announcementId, title, content, url = '/' }) {
+  try {
+    const { data, error } = await supabase.functions.invoke('send-broadcast-push', {
+      body: {
+        announcementId,
+        title,
+        content,
+        url,
+      },
+    });
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (err) {
+    console.error('Broadcast Push Invoke Error:', err.message);
+    return { success: false, error: err.message };
+  }
+}

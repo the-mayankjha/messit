@@ -18,7 +18,8 @@ import {
   uploadMessMenu, createAnnouncement,
   updateAnnouncement, deleteAnnouncement,
   getAnnouncements, getAllUsers,
-  supabase, getPrivilegedUsers, revokeUserRole
+  supabase, getPrivilegedUsers, revokeUserRole,
+  sendBroadcastPushNotification
 } from '../lib/supabase';
 import { parseExcelMenu } from '../utils/excelParser';
 import { requestNotificationPermission, sendNotification } from '../utils/notifier';
@@ -227,6 +228,19 @@ export default function AdminDashboard() {
       setAnnouncementTitle('');
       setAnnouncementBody('');
       setEditingAnnouncement(null);
+
+      const createdAnnouncement = Array.isArray(res.data) ? res.data[0] : res.data;
+      if (!editingAnnouncement && createdAnnouncement?.id) {
+        sendBroadcastPushNotification({
+          announcementId: createdAnnouncement.id,
+          title: announcementTitle,
+          content: announcementBody,
+          url: '/',
+        }).catch((err) => {
+          console.error('Broadcast push failed:', err);
+        });
+      }
+
       fetchAnnouncements(); // Sync from server for guaranteed consistency
       setTimeout(() => setSuccess(null), 3000);
     } else {
