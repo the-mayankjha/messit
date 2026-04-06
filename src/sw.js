@@ -51,15 +51,29 @@ self.addEventListener('push', (event) => {
 
   // SUPER SAFE DISPLAY: If rich notification fails, fall back to basic
   event.waitUntil(
-    self.registration.showNotification(title, options)
-      .catch((err) => {
+    (async () => {
+      // 1. Log receipt for debugging in Health Check
+      try {
+        const lastRec = { title, receivedAt: new Date().toISOString() };
+        // We can't use localStorage in SW, we must use IndexedDB or caches
+        const cache = await caches.open('messit-push-debug');
+        await cache.put('/last-push', new Response(JSON.stringify(lastRec)));
+      } catch (e) {
+        console.error('Debug log failed:', e);
+      }
+
+      // 2. Show the actual notification
+      try {
+        await self.registration.showNotification(title, options);
+      } catch (err) {
         console.error('Rich notification failed, falling back:', err);
-        return self.registration.showNotification(title, {
+        await self.registration.showNotification(title, {
           body: payload.body || 'New update available.',
           icon: `${origin}/icon.png`,
           data: { url: payload.url || '/' }
         });
-      })
+      }
+    })()
   );
 });
 

@@ -220,13 +220,30 @@ export default function Settings() {
   };
 
   const [pushStatus, setPushStatus] = useState(null);
+  const [lastBgSignal, setLastBgSignal] = useState(null);
+
   useEffect(() => {
-    const updateStatus = () => {
-      setPushStatus(window.__messitPushDebug || {});
+    const updateStatus = async () => {
+      const stats = JSON.parse(localStorage.getItem('messit-push-debug') || '{}');
+      setPushStatus(stats);
+
+      // Check Service Worker cache for background signals
+      try {
+        if ('caches' in window) {
+          const cache = await caches.open('messit-push-debug');
+          const response = await cache.match('/last-push');
+          if (response) {
+            const data = await response.json();
+            setLastBgSignal(data);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to read bg signal cache:', e);
+      }
     };
     updateStatus();
-    const timer = setInterval(updateStatus, 2000);
-    return () => clearInterval(timer);
+    const interval = setInterval(updateStatus, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleResetPushService = async () => {
@@ -878,6 +895,18 @@ export default function Settings() {
                     {pushStatus?.dbError && (
                       <p className="text-[9px] text-red-500 mt-1 font-mono break-all line-clamp-1">
                         Err: {pushStatus.dbError}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="col-span-2 p-3 rounded-2xl bg-muted/20 border border-border/40">
+                    <p className="text-[9px] font-bold uppercase tracking-tighter text-muted-foreground mb-1">Last Background Signal</p>
+                    <p className={`text-xs font-mono truncate ${lastBgSignal ? 'text-green-500' : 'text-primary/70'}`}>
+                      {lastBgSignal ? `${lastBgSignal.title.substring(0, 10)}... @ ${new Date(lastBgSignal.receivedAt).toLocaleTimeString()}` : 'No signal yet'}
+                    </p>
+                    {lastBgSignal && (
+                      <p className="text-[9px] text-muted-foreground mt-1 font-mono">
+                        Signal reached phone background successfully.
                       </p>
                     )}
                   </div>
