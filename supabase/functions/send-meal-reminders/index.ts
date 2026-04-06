@@ -114,15 +114,15 @@ Deno.serve(async (req) => {
     let vibratePattern = [200, 100, 200]; // Normal
 
     if (persona === 'princess') {
-      titleStr = `Your Meal Awaits, Princess ✨`;
+      titleStr = `✨ For You, Princess... 🎀 ${meal.name} Time!`;
       bodyStr = items.length > 0
-        ? `A delicious ${meal.name.toLowerCase()} is ready: ${items.slice(0, 3).join(', ')}... Treat yourself! 🎀`
-        : `It's time for a lovely ${meal.name.toLowerCase()}. You deserve a wonderful meal! 🎀`;
+        ? `A delicious meal awaits: ${items.slice(0, 3).join(', ')}... Treat yourself! 🎀`
+        : `It's time for a lovely ${meal.name.toLowerCase()}. You deserve it! 🎀`;
       vibratePattern = [100, 50, 100, 50, 100, 50, 100]; // Melodic
     } else if (persona === 'stud') {
-      titleStr = `Yo Bro, Fuel Up! 🥩`;
+      titleStr = `💪 Bro! 🔥 ${meal.name} Time!`;
       bodyStr = items.length > 0
-        ? `Protein alert! ${meal.name} menu: ${items.slice(0, 2).join(', ')} and more. Get it now! 🔥`
+        ? `Fuel alert! ${meal.name} menu: ${items.slice(0, 2).join(', ')} and more. Get it now! 🔥`
         : `Your ${meal.name.toLowerCase()} fuel is ready at the mess. Go grab it! 🔥`;
       vibratePattern = [500, 110, 500, 110, 450]; // Heavy
     }
@@ -132,8 +132,8 @@ Deno.serve(async (req) => {
       body: bodyStr,
       tag: `messit-meal-${meal.key}-${dateString}`,
       url: '/',
-      icon: `${siteUrl}/pwa-192x192.png`,
-      badge: `${siteUrl}/favicon.png`,
+      icon: `${siteUrl}/icon.png`,
+      badge: `${siteUrl}/icon.png`,
       image: items.length > 0 ? `${siteUrl}/images/meal-generic.jpg` : undefined,
       vibrate: vibratePattern,
       requireInteraction: true,

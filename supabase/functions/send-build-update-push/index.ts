@@ -35,22 +35,52 @@ Deno.serve(async (req) => {
   const supabase = createAdminClient();
   const { data: subscriptions, error } = await supabase
     .from('push_subscriptions')
-    .select('endpoint, p256dh, auth');
+    .select('endpoint, p256dh, auth, notification_mode');
 
   if (error) {
     return createJsonResponse({ error: error.message }, { status: 500 }, origin);
   }
 
-  const payload = {
-    title: `Latest update ${version} available`,
-    body: `A newer Messit build${buildDate ? ` from ${buildDate}` : ''} is ready. Open the app and update now.`,
-    tag: `messit-build-${version}`,
-    url,
-    data: { type: 'build_update', version },
+  const siteUrl = Deno.env.get('SITE_URL') || 'https://messy-phi.vercel.app';
+
+  // Group subscriptions by persona
+  const groups: Record<string, any[]> = {
+    normal: [],
+    stud: [],
+    princess: [],
   };
 
-  const results = await sendPushToSubscriptions(subscriptions ?? [], payload);
-  await markDispatched('build_update', dedupeKey, payload);
+  (subscriptions || []).forEach(sub => {
+    const mode = sub.notification_mode || 'normal';
+    if (groups[mode]) groups[mode].push(sub);
+    else groups.normal.push(sub);
+  });
 
-  return createJsonResponse({ success: true, sent: results.length, results }, { status: 200 }, origin);
+  const allResults: any[] = [];
+
+  for (const [mode, subs] of Object.entries(groups)) {
+    if (subs.length === 0) continue;
+
+    const prefix = mode === 'stud' ? '💪 Bro! 🔥' : mode === 'princess' ? '✨ For You, Princess... 🎀' : '🚀';
+    const vibratePattern = mode === 'stud' ? [500, 110, 500, 110, 450] : mode === 'princess' ? [100, 50, 100, 50, 100, 50, 100] : [200, 100, 200];
+
+    const groupPayload = {
+      title: `${prefix} v${version} is Ready!`,
+      body: `A fresh Messit build${buildDate ? ` from ${buildDate}` : ''} is ready with premium updates. Grab it now!`,
+      tag: `messit-build-${version}`,
+      url,
+      icon: `${siteUrl}/icon.png`,
+      badge: `${siteUrl}/icon.png`,
+      requireInteraction: true,
+      vibrate: vibratePattern,
+      data: { type: 'build_update', version },
+    };
+
+    const groupResults = await sendPushToSubscriptions(subs, groupPayload);
+    allResults.push(...groupResults);
+  }
+
+  await markDispatched('build_update', dedupeKey, { version });
+
+  return createJsonResponse({ success: true, sent: allResults.length, results: allResults }, { status: 200 }, origin);
 });

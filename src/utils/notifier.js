@@ -11,13 +11,13 @@ export const sendNotification = (mealName, mode, customTitle = null, customBody 
 
   if (!title || !body) {
     if (mode === 'stud') {
-      title = `Yo Bro, Fuel Up! 🥩`;
+      title = `💪 Bro! 🔥 ${mealName} Time!`;
       body = `Grab your protein! ${mealName} is being served at the mess. Let's get those gains.`;
     } else if (mode === 'princess') {
-      title = `Your Meal Awaits, Princess ✨`;
+      title = `✨ For You, Princess... 🎀 ${mealName} Time!`;
       body = `It's time for a delicious ${mealName}. Treat yourself well today! 🌸`;
     } else {
-      title = "Messit - Meal Time!";
+      title = `🍽️ ${mealName} Time!`;
       body = `Time for ${mealName}. See you at the mess!`;
     }
   }
