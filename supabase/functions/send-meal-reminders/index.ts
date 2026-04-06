@@ -106,15 +106,18 @@ Deno.serve(async (req) => {
     const siteUrl = Deno.env.get('SITE_URL') || 'https://messy-phi.vercel.app'; // Fallback to production URL
 
     const payload = {
-      title: `${meal.name} is being served 🍽️`,
+      title: `🍽️ ${meal.name} Time!`,
       body: items.length > 0 
         ? `${items.slice(0, 3).join(', ')}${items.length > 3 ? '...' : ''}` 
-        : `Your ${meal.name.toLowerCase()} is ready at the mess.`,
+        : `Hey! ${meal.name} is being served at the mess. Don't miss out!`,
       tag: `messit-meal-${meal.key}-${dateString}`,
       url: '/',
-      icon: `${siteUrl}/icon.png`,
-      badge: `${siteUrl}/icon.png`,
+      icon: `${siteUrl}/pwa-192x192.png`,
+      badge: `${siteUrl}/favicon.png`,
+      image: `${siteUrl}/pwa-512x512.png`,
       requireInteraction: true,
+      vibrate: [300, 100, 300, 100, 300],
+      actions: [{ action: 'open', title: 'Open Dashboard' }],
       data: { type: 'meal_reminder', meal: meal.key },
     };
 

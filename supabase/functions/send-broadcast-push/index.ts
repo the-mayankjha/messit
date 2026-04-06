@@ -43,10 +43,12 @@ Deno.serve(async (req) => {
     body: content,
     tag: `messit-announcement-${announcementId}`,
     url,
-    icon: `${siteUrl}/icon.png`,
-    badge: `${siteUrl}/icon.png`,
+    icon: `${siteUrl}/pwa-192x192.png`,
+    badge: `${siteUrl}/favicon.png`,
+    image: `${siteUrl}/pwa-512x512.png`,
     requireInteraction: true,
-    vibrate: [300, 100, 300],
+    vibrate: [300, 100, 300, 100, 300],
+    actions: [{ action: 'open', title: 'View Update' }],
     data: { type: 'broadcast', announcementId },
   };
 

@@ -28,22 +28,24 @@ self.addEventListener('push', (event) => {
   }
 
   const origin = self.location.origin;
-  const title = payload.title || 'Messit Notification';
+  const title = payload.title || 'Messit Update 📡';
   
-  // Ensure we use absolute paths from our own origin for icons/badges
-  // This is critical on iOS/Android when the app is closed.
   const options = {
-    body: payload.body || 'You have a new update in the mess.',
+    body: payload.body || 'New update available in your mess dashboard.',
     icon: payload.icon || `${origin}/icon.png`,
     badge: payload.badge || `${origin}/icon.png`,
+    image: payload.image || null, // Force expansion on Android
     tag: payload.tag || 'messit-push-default',
     renotify: true,
     requireInteraction: payload.requireInteraction || false,
-    vibrate: [200, 100, 200],
+    vibrate: payload.vibrate || [300, 100, 300, 100, 300], // More aggressive "Loud" pattern
     data: {
       url: payload.url || '/',
       ...payload.data,
     },
+    actions: payload.actions || [
+      { action: 'open', title: 'View Update' }
+    ]
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
