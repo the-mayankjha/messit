@@ -38,7 +38,9 @@ export default function Settings() {
     hostel, setProfile,
     roomNumber, messType,
     setIsOnboarded, setMenuData,
-    addNotification, setNotificationPending
+    addNotification, setNotificationPending,
+    isOnline,
+    isUpdateAvailable, setIsUpdateAvailable
   } = useStore();
 
   const systemTheme = typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
