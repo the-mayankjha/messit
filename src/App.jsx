@@ -7,6 +7,8 @@ import UploadMenu from './pages/UploadMenu';
 import Settings from './pages/Settings';
 import Search from './pages/Search';
 import Onboarding from './pages/Onboarding';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import AdminDashboard from './pages/AdminDashboard';
 import { UtensilsCrossed } from 'lucide-react';
 import { SettingsIcon } from './components/ui/icons/SettingsIcon';
@@ -659,8 +661,16 @@ export default function App() {
     );
   }
 
+  if (currentPage === 'terms') {
+    return <Terms onBack={() => setCurrentPage(needsOnboarding ? 'onboarding' : 'settings')} />;
+  }
+
+  if (currentPage === 'privacy') {
+    return <Privacy onBack={() => setCurrentPage(needsOnboarding ? 'onboarding' : 'settings')} />;
+  }
+
   if (needsOnboarding) {
-    return <Onboarding />;
+    return <Onboarding setCurrentPage={setCurrentPage} />;
   }
 
   const BellWithBadge = ({ isMobile = false }) => {

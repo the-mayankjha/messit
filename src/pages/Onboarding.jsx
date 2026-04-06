@@ -225,7 +225,17 @@ export default function Onboarding() {
                   <div className="mt-20">
                     <p className="text-[10px] text-muted-foreground/40 text-center leading-relaxed">
                       By continuing, you agree to our <br/>
-                      <span className="underline decoration-muted-foreground/20 underline-offset-4">terms of service</span> and <span className="underline decoration-muted-foreground/20 underline-offset-4">privacy policy</span>.
+                      <button 
+                        onClick={() => setCurrentPage('terms')}
+                        className="underline decoration-muted-foreground/20 underline-offset-4 hover:text-foreground transition-colors"
+                      >
+                        terms of service
+                      </button> and <button 
+                        onClick={() => setCurrentPage('privacy')}
+                        className="underline decoration-muted-foreground/20 underline-offset-4 hover:text-foreground transition-colors"
+                      >
+                        privacy policy
+                      </button>.
                     </p>
                   </div>
                 </motion.div>
