@@ -15,7 +15,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import { syncSupabaseProfile } from '../lib/supabase';
 import { ACCENT_COLORS } from '../constants/colors';
 
-export default function Onboarding() {
+export default function Onboarding({ setCurrentPage }) {
   const { 
     loginWithRedirect, 
     isLoading: isAuthLoading,
