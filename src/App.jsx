@@ -106,13 +106,20 @@ export default function App() {
 
   // PWA UPDATE WATCHDOG
   useEffect(() => {
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !import.meta.env.PROD) return;
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || import.meta.env.DEV) return;
 
     const wb = new Workbox('/sw.js');
 
     const handleUpdate = () => {
       setIsUpdateAvailable(true);
       window.dispatchEvent(new CustomEvent('messit-update-available'));
+
+      // 🔊 SHOUT: Persona-styled update alert
+      const prefix = notificationMode === 'stud' ? '💪 Bro! 🔥' : '✨ For You, Princess... 🎀';
+      sendNotification(
+        `${prefix} New Build Ready!`,
+        `Swipe to Settings to grab the latest premium features and fixes...`
+      );
     };
 
     wb.addEventListener('waiting', handleUpdate);
