@@ -264,11 +264,23 @@ export default function Settings() {
     if (!confirm("This will clear your current notification registration and attempt a fresh sync. Proceed?")) return;
     setIsSaving(true);
     try {
+      // 1. Unsubscribe from browser engine
       await unsubscribeFromPushNotifications();
+      
+      // 2. Clear local storage debug logs
+      localStorage.removeItem('messit-push-debug');
+      
+      // 3. Clear Service Worker background cache
+      if ('caches' in window) {
+        await caches.delete('messit-push-debug');
+      }
+      
+      // 4. Clear sync block session storage
       sessionStorage.removeItem(`messit-push-blocked:${user?.email}:${hostel}:${messType}:${role}`);
+      
       window.location.reload();
     } catch (err) {
-      console.error(err);
+      console.error('Reset failed:', err);
     } finally {
       setIsSaving(false);
     }

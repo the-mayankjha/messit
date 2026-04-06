@@ -37,6 +37,17 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+function areKeysEqual(key1, key2) {
+  if (!key1 || !key2) return false;
+  if (key1.byteLength !== key2.byteLength) return false;
+  const a = new Uint8Array(key1);
+  const b = new Uint8Array(key2);
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 export async function subscribeToPushNotifications() {
   updatePushDebug({ stage: 'start', lastError: null });
 
@@ -71,35 +82,32 @@ export async function subscribeToPushNotifications() {
     
     let subscription = await registration.pushManager.getSubscription();
     
+    // VAPID KEY MIGRATION: 403 FIX
     // If a subscription already exists, we must ensure it matches our current PUBLIC_VAPID_KEY.
-    // Transitioning keys without unsubscribing leads to "push service error".
-    if (subscription) {
-      const currentKey = urlBase64ToUint8Array(PUBLIC_VAPID_KEY);
-      const existingKey = new Uint8Array(subscription.options.applicationServerKey);
+    if (subscription && PUBLIC_VAPID_KEY) {
+      const currentKey = subscription.options.applicationServerKey;
+      const expectedKey = urlBase64ToUint8Array(PUBLIC_VAPID_KEY);
       
-      const isKeyMatch = currentKey.every((val, index) => val === existingKey[index]);
-      
-      if (!isKeyMatch) {
-        console.warn('VAPID Key mismatch detected. Unsubscribing old record to sync with new keys...');
-        updatePushDebug({ stage: 'key_mismatch_unsubscribing' });
+      if (!areKeysEqual(currentKey, expectedKey)) {
+        console.warn('VAPID key mismatch detected. Forcing re-subscription for self-healing...');
+        updatePushDebug({ stage: 'key_mismatch_detected' });
         await subscription.unsubscribe();
         subscription = null;
       }
     }
 
-    updatePushDebug({ stage: 'initial_check', existingSubscription: !!subscription });
-
     if (!subscription) {
-      updatePushDebug({ stage: 'subscribing' });
+      updatePushDebug({ stage: 'registering_new' });
+      const applicationServerKey = urlBase64ToUint8Array(PUBLIC_VAPID_KEY);
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY),
+        applicationServerKey: applicationServerKey,
       });
     }
 
-    updatePushDebug({
-      stage: 'subscribed',
-      hasSubscription: Boolean(subscription),
+    updatePushDebug({ 
+      stage: 'registered', 
+      hasSubscription: true,
       endpointPreview: subscription?.endpoint?.slice(0, 48) || null,
     });
 
