@@ -71,6 +71,7 @@ Deno.serve(async (req) => {
       url,
       icon: `${siteUrl}/icon.png`,
       badge: `${siteUrl}/icon.png`,
+      image: `${siteUrl}/icon.png`,
       requireInteraction: true,
       vibrate: vibratePattern,
       data: { type: 'build_update', version },

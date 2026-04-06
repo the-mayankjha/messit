@@ -38,7 +38,8 @@ export const sendNotification = (mealName, mode, customTitle = null, customBody 
           registration.showNotification(title, {
             body,
             icon,
-            badge: '/favicon.png',
+            badge: icon,
+            image: icon,
             vibrate: [200, 100, 200],
             tag: 'messit-announcement', 
             renotify: true,

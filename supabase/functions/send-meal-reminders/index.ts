@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
       url: '/',
       icon: `${siteUrl}/icon.png`,
       badge: `${siteUrl}/icon.png`,
-      image: items.length > 0 ? `${siteUrl}/images/meal-generic.jpg` : undefined,
+      image: `${siteUrl}/icon.png`,
       vibrate: vibratePattern,
       requireInteraction: true,
       actions: [{ action: 'open', title: 'Open Dashboard' }],
