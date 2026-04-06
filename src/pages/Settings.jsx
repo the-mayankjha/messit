@@ -872,9 +872,14 @@ export default function Settings() {
                   </div>
                   <div className="col-span-2 p-3 rounded-2xl bg-muted/20 border border-border/40">
                     <p className="text-[9px] font-bold uppercase tracking-tighter text-muted-foreground mb-1">Last Sync Status</p>
-                    <p className="text-xs font-mono truncate text-primary/80">
+                    <p className={`text-xs font-mono truncate ${pushStatus?.lastSyncStatus === 'synced_successfully' ? 'text-green-500' : 'text-primary/80'}`}>
                       {pushStatus?.lastSyncStatus || 'Never Synced'}
                     </p>
+                    {pushStatus?.dbError && (
+                      <p className="text-[9px] text-red-500 mt-1 font-mono break-all line-clamp-1">
+                        Err: {pushStatus.dbError}
+                      </p>
+                    )}
                   </div>
                 </div>
 
