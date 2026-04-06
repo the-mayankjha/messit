@@ -209,7 +209,18 @@ export default function Settings() {
       
       const res = await sendTestPushNotification(subscription?.toJSON());
       if (res.success) {
-        addNotification("Push Signal Dispatched 📡", "A test notification has been sent specifically to this device.");
+        // Show raw results for debugging
+        const resultCount = res.data?.results?.filter(r => r.success).length || 0;
+        const firstErr = res.data?.results?.find(r => !r.success);
+        
+        const statusMsg = firstErr 
+          ? `Cloud Rejected: ${firstErr.message} (Code: ${firstErr.statusCode})`
+          : `Cloud Accepted! Status: 201 Created`;
+
+        addNotification(
+          res.data?.targeted ? "Targeted Signal Sent 🎯" : "Broadcast Signal Sent 📡", 
+          statusMsg
+        );
         setNotificationPending(true);
       } else {
         throw new Error(res.error);
