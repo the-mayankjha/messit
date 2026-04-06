@@ -184,7 +184,6 @@ export default function Settings() {
     setIsOnboarded(false);
     logout({ logoutParams: { returnTo: window.location.origin } });
   };
-  const [testMeal, setTestMeal] = useState('Lunch');
   const [lastTestResult, setLastTestResult] = useState(null);
 
   const themes = [
