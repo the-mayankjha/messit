@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
 
   const { data: subscriptions, error } = await supabase
     .from('push_subscriptions')
-    .select('endpoint, p256dh, auth, hostel, mess_type, email');
+    .select('endpoint, p256dh, auth, hostel, mess_type, email, notification_mode');
 
   if (error) {
     return createJsonResponse({ error: error.message }, { status: 500 }, origin);
@@ -105,11 +105,27 @@ Deno.serve(async (req) => {
     const items = menuData[dayOfMonth]?.[meal.key] || [];
     const siteUrl = Deno.env.get('SITE_URL') || 'https://messy-phi.vercel.app'; // Fallback to production URL
 
+    const persona = subscription.notification_mode || 'stud';
+    let titleStr = `🍽️ ${meal.name} Time!`;
+    let bodyStr = items.length > 0 
+      ? `${items.slice(0, 3).join(', ')}${items.length > 3 ? '...' : ''}` 
+      : `Hey! ${meal.name} is being served at the mess. Don't miss out!`;
+
+    if (persona === 'princess') {
+      titleStr = `Your Meal Awaits, Princess ✨`;
+      bodyStr = items.length > 0
+        ? `A delicious ${meal.name.toLowerCase()} is ready: ${items.slice(0, 3).join(', ')}... Treat yourself! 🎀`
+        : `It's time for a lovely ${meal.name.toLowerCase()}. You deserve a wonderful meal! 🎀`;
+    } else if (persona === 'stud') {
+      titleStr = `Yo Bro, Fuel Up! 🥩`;
+      bodyStr = items.length > 0
+        ? `Protein alert! ${meal.name} menu: ${items.slice(0, 2).join(', ')} and more. Get it now! 🔥`
+        : `Your ${meal.name.toLowerCase()} fuel is ready at the mess. Go grab it! 🔥`;
+    }
+
     const payload = {
-      title: `🍽️ ${meal.name} Time!`,
-      body: items.length > 0 
-        ? `${items.slice(0, 3).join(', ')}${items.length > 3 ? '...' : ''}` 
-        : `Hey! ${meal.name} is being served at the mess. Don't miss out!`,
+      title: titleStr,
+      body: bodyStr,
       tag: `messit-meal-${meal.key}-${dateString}`,
       url: '/',
       icon: `${siteUrl}/pwa-192x192.png`,

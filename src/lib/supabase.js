@@ -307,13 +307,16 @@ export async function getAnnouncements() {
 /**
  * Update an existing Global Announcement
  */
-export async function updateAnnouncement(id, title, content) {
+export async function updateAnnouncement(id, title, content, messType, role, notificationMode) {
   try {
     const { data, error } = await supabase
       .from('announcements')
       .update({
         title,
-        content
+        content,
+        messType,
+        role,
+        notificationMode,
       })
       .eq('id', id)
       .select();
@@ -428,6 +431,7 @@ export async function upsertPushSubscription({
   hostel = null,
   messType = null,
   role = 'None',
+  notificationMode = 'stud',
   buildVersion = __APP_VERSION__,
 }) {
   try {
@@ -439,6 +443,7 @@ export async function upsertPushSubscription({
       hostel,
       mess_type: messType,
       role,
+      notification_mode: notificationMode,
       build_version: buildVersion,
       updated_at: new Date().toISOString(),
     };

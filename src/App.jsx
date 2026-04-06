@@ -489,11 +489,12 @@ export default function App() {
         const { upsertPushSubscription } = await import('./lib/supabase');
 
         const result = await upsertPushSubscription({
-          email: auth0User?.email || user?.email || null,
           subscription: serializedSubscription,
+          email: auth0User?.email || user?.email || null,
           hostel,
           messType,
           role,
+          notificationMode,
         });
 
         if (!result.success) {
