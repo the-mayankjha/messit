@@ -29,6 +29,7 @@ import { OfflineIndicator } from './components/ui/OfflineIndicator';
 import { WifiAnimatedIcon } from './components/ui/icons/WifiAnimatedIcon';
 import { WifiOffAnimatedIcon } from './components/ui/icons/WifiOffAnimatedIcon';
 import { subscribeToPushNotifications, updatePushDebug } from './utils/push';
+import { Workbox } from 'workbox-window';
 
 export default function App() {
   const pushSyncAttemptedRef = useRef(false);
@@ -101,6 +102,25 @@ export default function App() {
       window.removeEventListener('offline', handleOffline);
     };
   }, [setIsOnline, setSyncStatus]);
+
+  // PWA UPDATE WATCHDOG
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !import.meta.env.PROD) return;
+
+    const wb = new Workbox('/sw.js');
+
+    const handleUpdate = () => {
+      window.dispatchEvent(new CustomEvent('messit-update-available'));
+    };
+
+    wb.addEventListener('waiting', handleUpdate);
+    wb.register();
+
+    // Check for updates when the app is focused (foregrounded)
+    const checkUpdate = () => wb.update();
+    window.addEventListener('focus', checkUpdate);
+    return () => window.removeEventListener('focus', checkUpdate);
+  }, []);
 
   const effectiveTheme = theme === 'system' ? systemTheme : theme;
   const accentHex = ACCENT_COLORS[accentColor]?.[effectiveTheme] || ACCENT_COLORS.Blue[effectiveTheme];

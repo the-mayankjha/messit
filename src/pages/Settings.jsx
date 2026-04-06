@@ -56,6 +56,7 @@ export default function Settings() {
   const [isUpdatingApp, setIsUpdatingApp] = useState(false);
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [updateMessage, setUpdateMessage] = useState('');
+  const [testMeal, setTestMeal] = useState('Lunch');
   const moonIconRef = useRef(null);
   const sunIconRef = useRef(null);
   const bellIconRef = useRef(null);
@@ -295,51 +296,20 @@ export default function Settings() {
     }
 
     setIsUpdatingApp(true);
-    setIsUpdateAvailable(false);
-    window.__messitUpdateAvailable = false;
-    setUpdateMessage('Checking for the latest build...');
-    downloadIconRef.current?.startAnimation();
-    updateHeaderIconRef.current?.stopAnimation();
-    updateBuildCardIconRef.current?.stopAnimation();
+    setUpdateMessage('Applying update and restarting...');
 
     try {
-      let reloaded = false;
-      const reloadToLatest = () => {
-        if (reloaded) return;
-        reloaded = true;
-        window.location.reload();
-      };
-
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(registrations.map((registration) => registration.update()));
-
-        navigator.serviceWorker.addEventListener('controllerchange', reloadToLatest, { once: true });
-
-        if (typeof window.__messitUpdateSW === 'function') {
-          setUpdateMessage('Downloading update and restarting app...');
-          await window.__messitUpdateSW(true);
-        } else {
-          const waitingRegistration = registrations.find((registration) => registration.waiting);
-          if (waitingRegistration?.waiting) {
-            setUpdateMessage('Applying downloaded update...');
-            waitingRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
-          } else {
-            setUpdateMessage('No pending update found. Reloading app...');
-          }
-        }
-
-        window.setTimeout(reloadToLatest, 1800);
-      } else {
-        setUpdateMessage('Reloading app...');
-        window.setTimeout(() => window.location.reload(), 500);
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration?.waiting) {
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        // Give it a moment to activate before reload
+        await new Promise(resolve => setTimeout(resolve, 800));
       }
+      window.location.reload();
     } catch (err) {
-      console.error('PWA update failed:', err);
-      setUpdateMessage('Unable to update automatically. Please reload the app.');
-      setIsUpdatingApp(false);
-      downloadIconRef.current?.stopAnimation();
-      return;
+      console.error('Update failed:', err);
+      // Fallback
+      window.location.reload();
     }
   };
 
@@ -976,24 +946,30 @@ export default function Settings() {
                   }}
                 >
                   <div className="relative">
+                    <motion.div
+                      animate={isUpdateAvailable ? { y: [0, -4, 0] } : {}}
+                      transition={isUpdateAvailable ? { duration: 2, repeat: Infinity, ease: "easeInOut" } : {}}
+                    >
                       <DownloadIcon ref={updateHeaderIconRef} size={18} />
+                    </motion.div>
+                    
                     {isUpdateAvailable && (
-                      <>
+                      <div className="absolute -top-1 -right-1 flex items-center justify-center">
                         <span
-                          className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full animate-ping"
+                          className="absolute h-2.5 w-2.5 rounded-full animate-ping"
                           style={{
                             backgroundColor: accentHex,
-                            opacity: 0.45,
+                            opacity: 0.6,
                           }}
                         />
                         <span
-                          className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full"
+                          className="h-2 w-2 rounded-full relative"
                           style={{
                             backgroundColor: accentHex,
-                            boxShadow: `0 0 0 3px ${effectiveTheme === 'dark' ? '#1f1f1f' : '#ffffff'}`
+                            boxShadow: `0 0 8px ${accentHex}80`
                           }}
                         />
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
