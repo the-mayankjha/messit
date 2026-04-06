@@ -477,16 +477,19 @@ export async function deletePushSubscription(endpoint) {
 }
 
 /**
- * Trigger a test push notification for the current logged-in user.
+ * Trigger a targeted test push notification for the current device.
  */
-export async function sendTestPushNotification() {
+export async function sendTestPushNotification(subscription) {
+  if (!subscription) return { success: false, error: 'No device registration found. Please sync first.' };
+
   try {
     const { data, error } = await supabase.functions.invoke('send-broadcast-push', {
       body: {
         announcementId: 'test-ping-' + Date.now(),
         title: 'System Health Check 🛡️',
-        content: 'This is a test notification to verify your device is correctly synced with the Messit push engine.',
+        content: 'Your device is correctly synced with the Messit push engine. 📡✨',
         url: '/settings',
+        targetSubscription: subscription, // Send to THIS device only
       },
     });
 

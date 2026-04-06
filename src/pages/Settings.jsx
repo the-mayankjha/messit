@@ -204,9 +204,12 @@ export default function Settings() {
   const handleSendTestPush = async () => {
     setIsSaving(true);
     try {
-      const res = await sendTestPushNotification();
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      
+      const res = await sendTestPushNotification(subscription?.toJSON());
       if (res.success) {
-        addNotification("Push Signal Dispatched 📡", "A test notification has been sent to your device via the Messit engine.");
+        addNotification("Push Signal Dispatched 📡", "A test notification has been sent specifically to this device.");
         setNotificationPending(true);
       } else {
         throw new Error(res.error);

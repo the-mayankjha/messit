@@ -22,18 +22,10 @@ Deno.serve(async (req) => {
   const title = body.title;
   const content = body.content;
   const url = body.url || '/';
+  const targetSubscription = body.targetSubscription;
 
   if (!announcementId || !title || !content) {
     return createJsonResponse({ error: 'announcementId, title and content are required' }, { status: 400 }, origin);
-  }
-
-  const supabase = createAdminClient();
-  const { data: subscriptions, error } = await supabase
-    .from('push_subscriptions')
-    .select('endpoint, p256dh, auth');
-
-  if (error) {
-    return createJsonResponse({ error: error.message }, { status: 500 }, origin);
   }
 
   const siteUrl = Deno.env.get('SITE_URL') || 'https://messy-phi.vercel.app';
@@ -51,6 +43,22 @@ Deno.serve(async (req) => {
     actions: [{ action: 'open', title: 'View Update' }],
     data: { type: 'broadcast', announcementId },
   };
+
+  // TARGETED PUSH (for testing)
+  if (targetSubscription) {
+    const results = await sendPushToSubscriptions([targetSubscription], payload);
+    return createJsonResponse({ success: true, sent: results.length, results, targeted: true }, { status: 200 }, origin);
+  }
+
+  // BROADCAST PUSH (for real updates)
+  const supabase = createAdminClient();
+  const { data: subscriptions, error } = await supabase
+    .from('push_subscriptions')
+    .select('endpoint, p256dh, auth');
+
+  if (error) {
+    return createJsonResponse({ error: error.message }, { status: 500 }, origin);
+  }
 
   const results = await sendPushToSubscriptions(subscriptions ?? [], payload);
   await markDispatched('broadcast', `announcement:${announcementId}`, payload);
