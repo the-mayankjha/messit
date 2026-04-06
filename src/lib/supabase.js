@@ -471,6 +471,28 @@ export async function deletePushSubscription(endpoint) {
   }
 }
 
+/**
+ * Trigger a test push notification for the current logged-in user.
+ */
+export async function sendTestPushNotification() {
+  try {
+    const { data, error } = await supabase.functions.invoke('send-broadcast-push', {
+      body: {
+        announcementId: 'test-ping-' + Date.now(),
+        title: 'System Health Check 🛡️',
+        content: 'This is a test notification to verify your device is correctly synced with the Messit push engine.',
+        url: '/settings',
+      },
+    });
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (err) {
+    console.error('Test Push Error:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
 export async function sendBroadcastPushNotification({ announcementId, title, content, url = '/' }) {
   const isLocalhost =
     typeof window !== 'undefined' &&

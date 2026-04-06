@@ -36,11 +36,17 @@ Deno.serve(async (req) => {
     return createJsonResponse({ error: error.message }, { status: 500 }, origin);
   }
 
+  const siteUrl = Deno.env.get('SITE_URL') || 'https://messy-phi.vercel.app';
+
   const payload = {
     title: `📢 ${title}`,
     body: content,
     tag: `messit-announcement-${announcementId}`,
     url,
+    icon: `${siteUrl}/icon.png`,
+    badge: `${siteUrl}/icon.png`,
+    requireInteraction: true,
+    vibrate: [300, 100, 300],
     data: { type: 'broadcast', announcementId },
   };
 

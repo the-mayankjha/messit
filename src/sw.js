@@ -20,19 +20,26 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data ? event.data.json() : {};
   } catch {
+    const rawText = event.data?.text() || 'Check Messit for updates.';
     payload = {
-      title: 'Messit Notification',
-      body: event.data?.text() || 'You have a new update.',
+      title: 'Messit Update',
+      body: rawText,
     };
   }
 
+  const origin = self.location.origin;
   const title = payload.title || 'Messit Notification';
+  
+  // Ensure we use absolute paths from our own origin for icons/badges
+  // This is critical on iOS/Android when the app is closed.
   const options = {
-    body: payload.body || 'You have a new notification.',
-    icon: payload.icon || '/icon.png',
-    badge: payload.badge || '/favicon.png',
-    tag: payload.tag || 'messit-push',
+    body: payload.body || 'You have a new update in the mess.',
+    icon: payload.icon || `${origin}/icon.png`,
+    badge: payload.badge || `${origin}/icon.png`,
+    tag: payload.tag || 'messit-push-default',
     renotify: true,
+    requireInteraction: payload.requireInteraction || false,
+    vibrate: [200, 100, 200],
     data: {
       url: payload.url || '/',
       ...payload.data,

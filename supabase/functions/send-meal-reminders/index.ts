@@ -103,6 +103,8 @@ Deno.serve(async (req) => {
     if (!menuData) return { success: false, reason: 'no_menu_found' };
 
     const items = menuData[dayOfMonth]?.[meal.key] || [];
+    const siteUrl = Deno.env.get('SITE_URL') || 'https://messy-phi.vercel.app'; // Fallback to production URL
+
     const payload = {
       title: `${meal.name} is being served 🍽️`,
       body: items.length > 0 
@@ -110,6 +112,9 @@ Deno.serve(async (req) => {
         : `Your ${meal.name.toLowerCase()} is ready at the mess.`,
       tag: `messit-meal-${meal.key}-${dateString}`,
       url: '/',
+      icon: `${siteUrl}/icon.png`,
+      badge: `${siteUrl}/icon.png`,
+      requireInteraction: true,
       data: { type: 'meal_reminder', meal: meal.key },
     };
 

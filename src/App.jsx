@@ -466,8 +466,18 @@ export default function App() {
             error.includes('Registration failed - push service error');
 
           if (isPushServiceAbort) {
+            // Instead of just blocking, we flag it so the UI can offer troubleshooting
             sessionStorage.setItem(blockedSyncKey, 'true');
-            updatePushDebug({ stage: 'sync_blocked', reason: 'push_service_error' });
+            updatePushDebug({ 
+              stage: 'sync_blocked', 
+              reason: 'push_service_error',
+              suggestion: 'Try "Reset Push Service" in Settings if this persists.'
+            });
+            
+            addNotification(
+              "Push Sync Interrupted ⚡", 
+              "Your browser's push engine reported a service error. If you don't receive notifications, please visit Settings > Notification Health."
+            );
             return;
           }
           // Reset attempt ref to allow retry on next render if it failed at subscription level

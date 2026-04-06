@@ -17,9 +17,14 @@ import { DownloadIcon } from '../components/ui/icons/DownloadIcon';
 import { MoonIcon } from '../components/ui/icons/MoonIcon';
 import { SunIcon } from '../components/ui/icons/SunIcon';
 import { useAuth0 } from '@auth0/auth0-react';
-import { requestNotificationPermission, sendNotification } from '../utils/notifier';
+import { subscribeToPushNotifications, updatePushDebug, unsubscribeFromPushNotifications } from '../utils/push';
 import { ACCENT_COLORS } from '../constants/colors';
-import { submitCoordinatorRequest, getUserCoordinatorRequest, getSupabaseProfile } from '../lib/supabase';
+import { 
+  submitCoordinatorRequest, 
+  getUserCoordinatorRequest, 
+  getSupabaseProfile,
+  sendTestPushNotification
+} from '../lib/supabase';
 
 export default function Settings() {
   const { logout, loginWithRedirect, user: auth0User, isAuthenticated } = useAuth0();
@@ -193,6 +198,48 @@ export default function Settings() {
       setLastTestResult(result);
     } else {
       alert("Please enable notifications in your browser settings.");
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    setIsSaving(true);
+    try {
+      const res = await sendTestPushNotification();
+      if (res.success) {
+        addNotification("Push Signal Dispatched 📡", "A test notification has been sent to your device via the Messit engine.");
+        setNotificationPending(true);
+      } else {
+        throw new Error(res.error);
+      }
+    } catch (err) {
+      addNotification("Push Test Failed ❌", err.message || "Ensure your device is registered first.");
+      setNotificationPending(true);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const [pushStatus, setPushStatus] = useState(null);
+  useEffect(() => {
+    const updateStatus = () => {
+      setPushStatus(window.__messitPushDebug || {});
+    };
+    updateStatus();
+    const timer = setInterval(updateStatus, 2000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleResetPushService = async () => {
+    if (!confirm("This will clear your current notification registration and attempt a fresh sync. Proceed?")) return;
+    setIsSaving(true);
+    try {
+      await unsubscribeFromPushNotifications();
+      sessionStorage.removeItem(`messit-push-blocked:${user?.email}:${hostel}:${messType}:${role}`);
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -798,10 +845,56 @@ export default function Settings() {
                     </button>
                   </div>
                 </div>
+              </div>
 
-                <div className="pt-4 border-t border-border/40">
-                  <Button onClick={handleTestNotification} variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-widest hover:text-primary transition-all">
-                    Fire Test Alert
+              {/* Notification Health Check: Advanced Troubleshooting */}
+              <div className="pt-8 mt-4 border-t border-border/40">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Notification Health</h4>
+                    <p className="text-[10px] text-muted-foreground mt-1">Verify background delivery and sync state.</p>
+                  </div>
+                  <ShieldCheck size={18} className="text-muted-foreground/30" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="p-3 rounded-2xl bg-muted/20 border border-border/40">
+                    <p className="text-[9px] font-bold uppercase tracking-tighter text-muted-foreground mb-1">Permission</p>
+                    <p className="text-xs font-bold truncate">
+                      {Notification.permission === 'granted' ? '✅ Granted' : '❌ ' + Notification.permission}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-muted/20 border border-border/40">
+                    <p className="text-[9px] font-bold uppercase tracking-tighter text-muted-foreground mb-1">VAPID Key</p>
+                    <p className="text-xs font-bold truncate">
+                      {import.meta.env.VITE_VAPID_PUBLIC_KEY ? '✅ Present' : '❌ Missing'}
+                    </p>
+                  </div>
+                  <div className="col-span-2 p-3 rounded-2xl bg-muted/20 border border-border/40">
+                    <p className="text-[9px] font-bold uppercase tracking-tighter text-muted-foreground mb-1">Last Sync Status</p>
+                    <p className="text-xs font-mono truncate text-primary/80">
+                      {pushStatus?.lastSyncStatus || 'Never Synced'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleSendTestPush}
+                    disabled={isSaving || Notification.permission !== 'granted'}
+                    className="w-full h-11 rounded-xl border-dashed border-border/80 hover:bg-primary/5 text-xs font-bold"
+                  >
+                    <Megaphone size={16} className="mr-2" />
+                    Send Test Push (E2E)
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleResetPushService}
+                    className="w-full h-10 rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-500/5 text-[10px] font-bold uppercase tracking-widest"
+                  >
+                    <RefreshCw size={14} className="mr-2" />
+                    Reset & Re-register Service
                   </Button>
                 </div>
               </div>
