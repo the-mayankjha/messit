@@ -46,6 +46,32 @@ Deno.serve(async (req) => {
 
   // TARGETED PUSH (for testing)
   if (targetSubscription) {
+    const persona = targetSubscription.notification_mode || 'normal';
+    let titleStr = `📢 ${title}`;
+    let vibratePattern = [200, 100, 200];
+
+    if (persona === 'princess') {
+      titleStr = `✨ For You, Princess... 🎀 ${title}`;
+      vibratePattern = [100, 50, 100, 50, 100, 50, 100];
+    } else if (persona === 'stud') {
+      titleStr = `💪 Bro! 🔥 ${title}`;
+      vibratePattern = [500, 110, 500, 110, 450];
+    }
+
+    const payload = {
+      title: titleStr,
+      body: content,
+      tag: `messit-announcement-${announcementId}`,
+      url,
+      icon: `${siteUrl}/pwa-192x192.png`,
+      badge: `${siteUrl}/favicon.png`,
+      image: `${siteUrl}/pwa-512x512.png`,
+      requireInteraction: true,
+      vibrate: vibratePattern,
+      actions: [{ action: 'open', title: 'View Update' }],
+      data: { type: 'broadcast', announcementId },
+    };
+
     const results = await sendPushToSubscriptions([targetSubscription], payload);
     return createJsonResponse({ success: true, sent: results.length, results, targeted: true }, { status: 200 }, origin);
   }
@@ -54,14 +80,61 @@ Deno.serve(async (req) => {
   const supabase = createAdminClient();
   const { data: subscriptions, error } = await supabase
     .from('push_subscriptions')
-    .select('endpoint, p256dh, auth');
+    .select('endpoint, p256dh, auth, notification_mode');
 
   if (error) {
     return createJsonResponse({ error: error.message }, { status: 500 }, origin);
   }
 
-  const results = await sendPushToSubscriptions(subscriptions ?? [], payload);
-  await markDispatched('broadcast', `announcement:${announcementId}`, payload);
+  // Group subscriptions by persona
+  const groups: Record<string, any[]> = {
+    normal: [],
+    stud: [],
+    princess: [],
+  };
 
-  return createJsonResponse({ success: true, sent: results.length, results }, { status: 200 }, origin);
+  (subscriptions || []).forEach(sub => {
+    const mode = sub.notification_mode || 'normal';
+    if (groups[mode]) groups[mode].push(sub);
+    else groups.normal.push(sub);
+  });
+
+  const allResults: any[] = [];
+
+  // Send to each group with custom tone
+  for (const [mode, subs] of Object.entries(groups)) {
+    if (subs.length === 0) continue;
+
+    let titleStr = `📢 ${title}`;
+    let vibratePattern = [200, 100, 200];
+
+    if (mode === 'princess') {
+      titleStr = `✨ For You, Princess... 🎀 ${title}`;
+      vibratePattern = [100, 50, 100, 50, 100, 50, 100];
+    } else if (mode === 'stud') {
+      titleStr = `💪 Bro! 🔥 ${title}`;
+      vibratePattern = [500, 110, 500, 110, 450];
+    }
+
+    const groupPayload = {
+      title: titleStr,
+      body: content,
+      tag: `messit-announcement-${announcementId}`,
+      url,
+      icon: `${siteUrl}/pwa-192x192.png`,
+      badge: `${siteUrl}/favicon.png`,
+      image: `${siteUrl}/pwa-512x512.png`,
+      requireInteraction: true,
+      vibrate: vibratePattern,
+      actions: [{ action: 'open', title: 'View Update' }],
+      data: { type: 'broadcast', announcementId },
+    };
+
+    const groupResults = await sendPushToSubscriptions(subs, groupPayload);
+    allResults.push(...groupResults);
+  }
+
+  await markDispatched('broadcast', `announcement:${announcementId}`, { title, content });
+
+  return createJsonResponse({ success: true, sent: allResults.length, results: allResults }, { status: 200 }, origin);
 });

@@ -521,12 +521,18 @@ export default function App() {
       if (sessionStorage.getItem(notifiedKey)) return;
       sessionStorage.setItem(notifiedKey, 'true');
 
-      sendNotification(
-        null,
-        notificationMode,
-        'Latest App Update Available',
-        `A newer Messit build is ready. Open Settings and tap Get Latest Version to update from v${__APP_VERSION__}.`
-      );
+      let title = 'Latest App Update Available';
+      let body = `A newer Messit build is ready. Open Settings and tap Get Latest Version to update from v${__APP_VERSION__}.`;
+
+      if (notificationMode === 'princess') {
+        title = 'A Lovely Update for My Princess ✨';
+        body = `A fresh Messit build is waiting for you. Please visit Settings to enjoy the latest enhancements, Princess! 🎀`;
+      } else if (notificationMode === 'stud') {
+        title = 'Bro! Fresh Build Ready 🔥';
+        body = `New version v${__APP_VERSION__} is live. Go to Settings and upgrade your rig now! 💪`;
+      }
+
+      sendNotification(null, notificationMode, title, body);
     };
 
     window.addEventListener('messit-update-available', handleUpdateAvailable);
