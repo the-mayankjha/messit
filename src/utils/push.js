@@ -15,10 +15,13 @@ if (typeof window !== 'undefined') {
 export function updatePushDebug(partial) {
   if (typeof window === 'undefined') return;
 
-  window.__messitPushDebug = {
+  const current = {
     ...(window.__messitPushDebug || {}),
     ...partial,
   };
+  
+  window.__messitPushDebug = current;
+  localStorage.setItem('messit-push-debug', JSON.stringify(current));
 }
 
 function urlBase64ToUint8Array(base64String) {
