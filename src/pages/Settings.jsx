@@ -100,7 +100,7 @@ export default function Settings() {
 
     setProfile(updatedProfile);
 
-    // Supabase Sync
+    // 2. Supabase Cloud Profile Sync
     try {
       const { syncSupabaseProfile } = await import('../lib/supabase');
       await syncSupabaseProfile({
@@ -109,6 +109,24 @@ export default function Settings() {
         name: user?.name,
         picture: user?.picture || auth0User?.picture || null,
       });
+
+      // 🛰️ NEW: Automatic Persona & Push Sync
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        if (subscription) {
+          const { upsertPushSubscription } = await import('../lib/supabase');
+          await upsertPushSubscription({
+            email: user?.email,
+            subscription: subscription.toJSON(),
+            hostel: localHostel,
+            messType: localMess,
+            role: role,
+            notificationMode: notificationMode,
+          });
+        }
+      }
+
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
