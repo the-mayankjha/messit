@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => ({
         short_name: 'Messit',
         description: 'Premium College Mess Menu Tracking & Reminders',
         theme_color: '#10b981',
-        background_color: '#09090b',
+        background_color: '#191919',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
