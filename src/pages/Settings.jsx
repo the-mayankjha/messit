@@ -54,7 +54,6 @@ export default function Settings() {
   const [coordinatorRequest, setCoordinatorRequest] = useState(null);
   const [isRequesting, setIsRequesting] = useState(false);
   const [isUpdatingApp, setIsUpdatingApp] = useState(false);
-  const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [updateMessage, setUpdateMessage] = useState('');
   const [testMeal, setTestMeal] = useState('Lunch');
   const moonIconRef = useRef(null);
@@ -137,17 +136,6 @@ export default function Settings() {
       });
     }
   }, [user?.email]);
-
-  useEffect(() => {
-    const syncUpdateState = () => {
-      setIsUpdateAvailable(Boolean(window.__messitUpdateAvailable));
-    };
-
-    syncUpdateState();
-    window.addEventListener('messit-update-available', syncUpdateState);
-
-    return () => window.removeEventListener('messit-update-available', syncUpdateState);
-  }, []);
 
   useEffect(() => {
     if (isUpdateAvailable) {

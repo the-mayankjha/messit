@@ -61,6 +61,7 @@ export default function App() {
     removeNotificationByAnnouncementId,
     isOnline,
     setIsOnline,
+    setIsUpdateAvailable,
   } = useStore();
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -110,6 +111,7 @@ export default function App() {
     const wb = new Workbox('/sw.js');
 
     const handleUpdate = () => {
+      setIsUpdateAvailable(true);
       window.dispatchEvent(new CustomEvent('messit-update-available'));
     };
 

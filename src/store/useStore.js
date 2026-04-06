@@ -57,6 +57,10 @@ export const useStore = create(
       setSyncStatus: (status) => set(status),
       setCloudMenuInfo: (cloudMenuInfo) => set({ cloudMenuInfo }),
 
+      // PWA Update Status (Un-persistent)
+      isUpdateAvailable: false,
+      setIsUpdateAvailable: (isUpdateAvailable) => set({ isUpdateAvailable }),
+
       // Online Status (Un-persistent)
       isOnline: typeof window !== 'undefined' ? window.navigator.onLine : true,
       setIsOnline: (isOnline) => set({ isOnline }),
@@ -104,7 +108,7 @@ export const useStore = create(
       name: 'messit-storage',
       partialize: (state) => 
         Object.fromEntries(
-          Object.entries(state).filter(([key]) => !['isOnline'].includes(key))
+          Object.entries(state).filter(([key]) => !['isOnline', 'isUpdateAvailable'].includes(key))
         ),
     }
   )
