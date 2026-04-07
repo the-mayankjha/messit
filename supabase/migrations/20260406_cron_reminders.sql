@@ -11,9 +11,8 @@ create extension if not exists pg_cron;
 -- Note: In Supabase, you can also set these up via the UI under 'Project Settings' -> 'Database' -> 'Cron Jobs'.
 
 select
-  cron.schedule(
     'send-meal-reminders-job',
-    '* * * * *', -- Every minute
+    '* * * * *', -- Every minute (The function handles internal IST windows)
     $$
     select
       net.http_post(

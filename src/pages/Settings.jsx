@@ -925,14 +925,59 @@ export default function Settings() {
                     <Megaphone size={16} className="mr-2" />
                     Send Test Push (E2E)
                   </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={handleResetPushService}
-                    className="w-full h-10 rounded-xl text-muted-foreground hover:text-red-500 hover:bg-red-500/5 text-[10px] font-bold uppercase tracking-widest"
-                  >
-                    <RefreshCw size={14} className="mr-2" />
-                    Reset & Re-register Service
-                  </Button>
+                  
+                  {/* Premium Health Check Block */}
+                  <div className="pt-4 border-t border-border/40 mt-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground/80">Notification Health</h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                      <div className="p-4 rounded-2xl bg-secondary/20 border border-border/40">
+                        <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1">Status</p>
+                        <p className="font-bold text-xs truncate">
+                          {pushStatus?.hasSubscription ? 'Cloud Registered' : 'Not Linked'}
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-secondary/20 border border-border/40">
+                        <p className="text-[8px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-1">PWA Mode</p>
+                        <p className="font-bold text-xs">
+                          {window.matchMedia('(display-mode: standalone)').matches ? 'Standalone' : 'Browser'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Conditional iOS Alert */}
+                    {/iPhone|iPad|iPod/.test(navigator.userAgent) && !window.matchMedia('(display-mode: standalone)').matches && (
+                      <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex gap-4">
+                        <div className="shrink-0 text-amber-500 pt-0.5">
+                          <ShieldAlert size={18} />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold text-amber-500">iOS Standalone Mode Required</p>
+                          <p className="text-[10px] text-muted-foreground leading-relaxed">
+                            To receive reminders when Messit is closed on iPhone, you must use <span className="font-bold text-foreground">"Add to Home Screen"</span> from Safari's share menu.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        variant="outline" 
+                        onClick={handleResetPushService}
+                        disabled={isSaving}
+                        className="w-full h-12 rounded-2xl text-[10px] font-black uppercase tracking-widest border-border/60 hover:bg-red-500/5 hover:text-red-500 hover:border-red-500/20 transition-all"
+                      >
+                        <RefreshCw size={14} className={`mr-2 ${isSaving ? 'animate-spin' : ''}`} />
+                        Sync Notification Service
+                      </Button>
+                      <p className="text-[9px] text-muted-foreground text-center">
+                        Use this if prompts aren't appearing or reminders are delayed.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
